@@ -14,5 +14,9 @@ class Job(Base):
 
     worker_id = Column(String, nullable=True)
     lease_until = Column(Float, nullable=True)
-    
+
     idempotency_key = Column(String, unique=True, nullable=True)
+
+    created_at = Column(Float, default=time.time)
+    started_at = Column(Float, nullable=True)
+    completed_at = Column(Float, nullable=True)
