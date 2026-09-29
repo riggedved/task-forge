@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, JSON, Float
 from app.database import Base
+import time
 
 
 class Job(Base):

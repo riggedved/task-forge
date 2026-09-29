@@ -27,7 +27,7 @@ def home():
     return {"message": "Job Queue API is running"}
 
 
-@app.post("/jobs")
+@app.post("/create-job")
 def create_job(job: JobRequest):
 
     db = SessionLocal()
@@ -105,3 +105,61 @@ def create_job(job: JobRequest):
         "status": new_job.status,
         "idempotency_key": new_job.idempotency_key
     }
+
+
+@app.get("/jobs")
+def get_jobs():
+    db = SessionLocal()
+
+    jobs = db.query(Job).order_by(
+        Job.id.desc()
+    ).all()
+
+    result = []
+
+    for job in jobs:
+        result.append({
+            "id": job.id,
+            "type": job.type,
+            "priority": job.priority,
+            "status": job.status,
+            "retry_count": job.retry_count,
+            "worker_id": job.worker_id,
+            "created_at": job.created_at,
+            "started_at": job.started_at,
+            "completed_at": job.completed_at
+        })
+
+    db.close()
+
+    return result
+
+@app.get("/jobs/{job_id}")
+def get_job(job_id: int):
+    db = SessionLocal()
+
+    job = db.query(Job).filter(
+        Job.id == job_id
+    ).first()
+
+    if not job:
+        db.close()
+        return {"error": "Job not found"}
+
+    result = {
+        "id": job.id,
+        "type": job.type,
+        "payload": job.payload,
+        "priority": job.priority,
+        "status": job.status,
+        "retry_count": job.retry_count,
+        "worker_id": job.worker_id,
+        "lease_until": job.lease_until,
+        "created_at": job.created_at,
+        "started_at": job.started_at,
+        "completed_at": job.completed_at
+    }
+
+    db.close()
+
+    return result
