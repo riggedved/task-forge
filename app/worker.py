@@ -1,10 +1,13 @@
+import os
+import sys
 import time
 import uuid
 import threading
 
 from app.redis_client import redis_client
 from app.database import SessionLocal
-from app.models import Job
+from app.models import Job, Worker
+from app.events import record_job_event, record_worker_event
 
 
 READY_QUEUE = "job_queue"
@@ -18,7 +21,107 @@ RETRY_BACKOFF_BASE = 5
 LEASE_DURATION = 60
 HEARTBEAT_INTERVAL = 20
 
-WORKER_ID = str(uuid.uuid4())
+# Support WORKER_ID from environment variable or CLI argument, fallback to random UUID
+WORKER_ID = os.environ.get("WORKER_ID") or (sys.argv[1] if len(sys.argv) > 1 else f"worker-{uuid.uuid4().hex[:8]}")
+
+
+# ---------------------------------------------------------
+# Worker Registry & Heartbeat Helpers
+# ---------------------------------------------------------
+
+def register_worker():
+    """Register worker in PostgreSQL as IDLE on startup."""
+    db = SessionLocal()
+    try:
+        worker = db.query(Worker).filter(Worker.worker_id == WORKER_ID).first()
+        now = time.time()
+        if not worker:
+            worker = Worker(
+                worker_id=WORKER_ID,
+                status="IDLE",
+                current_job_id=None,
+                started_at=now,
+                last_heartbeat=now
+            )
+            db.add(worker)
+            record_worker_event(db, WORKER_ID, "WORKER_STARTED", f"Worker {WORKER_ID} started")
+        else:
+            worker.status = "IDLE"
+            worker.current_job_id = None
+            worker.last_heartbeat = now
+            worker.stopped_at = None
+        db.commit()
+    except Exception as e:
+        print(f"Error registering worker {WORKER_ID}: {e}")
+    finally:
+        db.close()
+
+
+def update_worker_heartbeat():
+    """Periodic worker heartbeat update in PostgreSQL."""
+    db = SessionLocal()
+    try:
+        worker = db.query(Worker).filter(Worker.worker_id == WORKER_ID).first()
+        if worker and worker.status != "STOPPED":
+            worker.last_heartbeat = time.time()
+            db.commit()
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
+def worker_heartbeat_loop(stop_event):
+    """Background daemon thread to refresh worker heartbeat every 5s."""
+    while not stop_event.wait(5):
+        update_worker_heartbeat()
+
+
+def set_worker_job(job_id: int | None):
+    """Update worker status to PROCESSING (with job_id) or IDLE."""
+    db = SessionLocal()
+    try:
+        worker = db.query(Worker).filter(Worker.worker_id == WORKER_ID).first()
+        if worker and worker.status != "STOPPED":
+            worker.status = "PROCESSING" if job_id is not None else "IDLE"
+            worker.current_job_id = job_id
+            worker.last_heartbeat = time.time()
+            db.commit()
+    except Exception as e:
+        print(f"Error updating worker job state: {e}")
+    finally:
+        db.close()
+
+
+def should_stop() -> bool:
+    """Check if a stop signal has been issued for this worker via Redis."""
+    try:
+        return bool(redis_client.exists(f"worker_stop:{WORKER_ID}"))
+    except Exception:
+        return False
+
+
+def stop_worker_cleanly():
+    """Mark worker as STOPPED in PostgreSQL and clean up Redis stop flag."""
+    db = SessionLocal()
+    try:
+        worker = db.query(Worker).filter(Worker.worker_id == WORKER_ID).first()
+        now = time.time()
+        if worker:
+            worker.status = "STOPPED"
+            worker.current_job_id = None
+            worker.stopped_at = now
+            worker.last_heartbeat = now
+            record_worker_event(db, WORKER_ID, "WORKER_STOPPED", f"Worker {WORKER_ID} stopped cleanly")
+            db.commit()
+    except Exception as e:
+        print(f"Error stopping worker cleanly: {e}")
+    finally:
+        db.close()
+    try:
+        redis_client.delete(f"worker_stop:{WORKER_ID}")
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------
@@ -211,7 +314,17 @@ def process_job(job_id):
     job.lease_until = time.time() + LEASE_DURATION
     job.started_at = time.time()
 
+    record_job_event(
+        db,
+        job.id,
+        "JOB_PROCESSING",
+        f"Job {job.id} started processing by worker {WORKER_ID}"
+    )
+
     db.commit()
+
+    # Update worker status to PROCESSING
+    set_worker_job(job.id)
 
     # -----------------------------------------------------
     # Start heartbeat
@@ -235,8 +348,14 @@ def process_job(job_id):
         print(f"Priority: {job.priority}")
         print(f"Worker: {WORKER_ID}")
 
-        # Simulate work
-        time.sleep(10)
+        # Simulate work (default 10s, configurable via payload)
+        work_duration = 10
+        if isinstance(job.payload, dict):
+            if "duration" in job.payload:
+                work_duration = float(job.payload["duration"])
+            elif "sleep" in job.payload:
+                work_duration = float(job.payload["sleep"])
+        time.sleep(work_duration)
 
         # Temporary failure simulation
         if job.type == "fail":
@@ -254,6 +373,13 @@ def process_job(job_id):
         job.worker_id = None
         job.lease_until = None
         job.completed_at = time.time()
+
+        record_job_event(
+            db,
+            job.id,
+            "JOB_COMPLETED",
+            f"Job {job.id} completed successfully"
+        )
 
         db.commit()
 
@@ -285,6 +411,13 @@ def process_job(job_id):
                 }
             )
 
+            record_job_event(
+                db,
+                job.id,
+                "JOB_RETRY_SCHEDULED",
+                f"Job {job.id} retry {job.retry_count}/{MAX_RETRIES} scheduled in {retry_delay} seconds"
+            )
+
             print(
                 f"Retrying Job {job.id} "
                 f"(retry {job.retry_count}/{MAX_RETRIES}) "
@@ -305,6 +438,13 @@ def process_job(job_id):
                 }
             )
 
+            record_job_event(
+                db,
+                job.id,
+                "JOB_FAILED",
+                f"Job {job.id} permanently failed after {job.retry_count} retries"
+            )
+
             print(
                 f"Job {job.id} permanently failed "
                 f"after {job.retry_count} retries"
@@ -319,6 +459,9 @@ def process_job(job_id):
 
         db.close()
 
+        # Reset worker status back to IDLE
+        set_worker_job(None)
+
 
 # ---------------------------------------------------------
 # Worker loop
@@ -326,20 +469,45 @@ def process_job(job_id):
 
 if __name__ == "__main__":
 
-    while True:
+    print(f"Starting Worker {WORKER_ID}")
+    register_worker()
 
-        # Move scheduled jobs into ready queue
-        move_delayed_jobs()
+    stop_heartbeat = threading.Event()
+    worker_hb_thread = threading.Thread(
+        target=worker_heartbeat_loop,
+        args=(stop_heartbeat,),
+        daemon=True
+    )
+    worker_hb_thread.start()
 
-        # Atomically claim a job
-        job_id = get_next_job()
+    try:
+        while True:
+            # Check if stop signal has been issued for this worker
+            if should_stop():
+                print(f"Worker {WORKER_ID} received stop signal. Stopping.")
+                break
 
-        if job_id:
+            # Move scheduled jobs into ready queue
+            move_delayed_jobs()
 
-            process_job(job_id)
+            # Atomically claim a job
+            job_id = get_next_job()
 
-        else:
+            if job_id:
 
-            print("No jobs in queue")
+                process_job(job_id)
 
-            time.sleep(2)
+            else:
+
+                # Check for stop signal more frequently while idle
+                for _ in range(4):
+                    if should_stop():
+                        break
+                    time.sleep(0.5)
+
+    except KeyboardInterrupt:
+        print(f"\nWorker {WORKER_ID} received KeyboardInterrupt. Shutting down.")
+    finally:
+        stop_heartbeat.set()
+        stop_worker_cleanly()
+        print(f"Worker {WORKER_ID} shut down.")

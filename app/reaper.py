@@ -3,6 +3,7 @@ import time
 from app.database import SessionLocal
 from app.models import Job
 from app.redis_client import redis_client
+from app.events import record_job_event
 
 
 READY_QUEUE = "job_queue"
@@ -59,6 +60,13 @@ def recover_expired_jobs():
             print(
                 f"Recovering Job {job.id} "
                 f"from worker {job.worker_id}"
+            )
+
+            record_job_event(
+                db,
+                job.id,
+                "JOB_RECOVERED",
+                f"Job {job.id} recovered from worker {job.worker_id} after lease expiration"
             )
 
             job.status = "PENDING"

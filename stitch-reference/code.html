@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-primary":"#494bd6","surface-tint":"#c0c1ff","primary":"#c0c1ff","primary-fixed-dim":"#c0c1ff","on-secondary-fixed":"#23005c","on-error":"#690005","surface-container-high":"#262a33","on-secondary":"#3c0091","secondary-fixed-dim":"#d0bcff","secondary-fixed":"#e9ddff","on-tertiary-fixed-variant":"#004e5c","surface-container-lowest":"#0a0e16","tertiary":"#4cd7f6","on-primary-container":"#0d0096","inverse-surface":"#dfe2ee","surface-container-highest":"#31353e","on-primary":"#1000a9","on-background":"#dfe2ee","surface-container":"#1c2028","on-tertiary-fixed":"#001f26","inverse-on-surface":"#2c3039","error-container":"#93000a","tertiary-container":"#009eb9","surface-dim":"#0f131c","on-secondary-fixed-variant":"#5516be","background":"#0f131c","error":"#ffb4ab","surface-variant":"#31353e","on-tertiary-container":"#002f38","primary-fixed":"#e1e0ff","tertiary-fixed-dim":"#4cd7f6","surface":"#0f131c","surface-bright":"#353942","on-surface":"#dfe2ee","secondary-container":"#571bc1","on-primary-fixed-variant":"#2f2ebe","primary-container":"#8083ff","on-secondary-container":"#c4abff","on-surface-variant":"#c7c4d7","surface-container-low":"#181c24","secondary":"#d0bcff","on-tertiary":"#003640","on-primary-fixed":"#07006c","outline":"#908fa0","on-error-container":"#ffdad6","outline-variant":"#464554","tertiary-fixed":"#acedff"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{gutter:"1rem","margin-mobile":"0.75rem","space-md":"0.75rem","space-lg":"1.25rem","space-sm":"0.5rem",margin:"1.5rem","gutter-compact":"0.5rem","space-xl":"2rem","space-xs":"0.25rem"},fontFamily:{"mono-sm":["JetBrains Mono"],"headline-lg":["Inter"],"headline-xl":["Inter"],"headline-md":["Inter"],"label-caps":["JetBrains Mono"],"mono-md":["JetBrains Mono"],"body-lg":["Inter"],"mono-lg":["JetBrains Mono"],"headline-sm":["Inter"],"body-sm":["Inter"],"body-md":["Inter"],"label-md":["Inter"]},fontSize:{"mono-sm":["0.6875rem",{lineHeight:"1rem",fontWeight:"400"}],"headline-lg":["1.75rem",{lineHeight:"2.25rem",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-xl":["2.25rem",{lineHeight:"2.75rem",letterSpacing:"-0.025em",fontWeight:"600"}],"headline-md":["1.25rem",{lineHeight:"1.75rem",letterSpacing:"-0.015em",fontWeight:"600"}],"label-caps":["0.625rem",{lineHeight:"0.875rem",letterSpacing:"0.06em",fontWeight:"600"}],"mono-md":["0.75rem",{lineHeight:"1.25rem",fontWeight:"400"}],"body-lg":["1rem",{lineHeight:"1.5rem",fontWeight:"400"}],"mono-lg":["0.875rem",{lineHeight:"1.375rem",letterSpacing:"-0.01em",fontWeight:"500"}],"headline-sm":["1rem",{lineHeight:"1.5rem",letterSpacing:"-0.01em",fontWeight:"600"}],"body-sm":["0.75rem",{lineHeight:"1.125rem",fontWeight:"400"}],"body-md":["0.875rem",{lineHeight:"1.375rem",fontWeight:"400"}],"label-md":["0.75rem",{lineHeight:"1rem",letterSpacing:"0.02em",fontWeight:"500"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-14 w-full px-margin flex items-center justify-between"><div class="flex items-center gap-space-md"><img alt="Task Forge Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XROLcTOCq1Nrs_91uiYk4UBq6HdpyRsgPCwQGvUvDVd90ep3eBS2WHcuNfyjlNDjxeqm-SFWSx-dZsPb6ZT7s9gK8Su8NOnx0922y9kgcqmjEIm1buGZ1nH5OmHPW7L5m89Q57iGMulLGqB5OB_vucC8nSgYpvy6nAERt-AkvKpOWoWTJpqqLIcSiWcjWS_dJkkFKCcJfJbFAcOAArOo0ibCiL4fhVoindApE0y0e54hR5-qdJ8Pa8L0WY"/><div class="flex items-baseline gap-space-sm"><span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface font-semibold">TASK FORGE</span><span class="hidden xl:inline text-on-surface-variant font-mono-sm text-mono-sm opacity-80">Distributed Job Processing Playground</span></div><div class="hidden md:flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container text-on-surface-variant font-mono-sm text-mono-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span class="text-on-surface font-medium">Cluster:</span><span>prod-us-east (FastAPI + Redis + PG)</span></div></div><div class="flex items-center gap-space-md"><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container font-mono-sm text-mono-sm"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span></span><span class="text-tertiary font-semibold tracking-wider uppercase">SYSTEM ONLINE</span></div><div class="hidden 2xl:flex items-center gap-space-md font-mono-sm text-mono-sm text-on-surface-variant px-space-sm py-space-xs rounded bg-surface-container-low"><div>Redis <span class="text-tertiary font-mono-sm text-mono-sm">0.4ms</span></div><div class="w-1 h-1 rounded-full bg-outline-variant"></div><div>Postgres <span class="text-primary font-mono-sm text-mono-sm">Connected</span></div><div class="w-1 h-1 rounded-full bg-outline-variant"></div><div>Workers <span class="text-tertiary font-mono-sm text-mono-sm">4/4 Active</span></div></div><div class="flex items-center gap-space-xs"><button class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors flex items-center justify-center" title="Documentation" type="button"><span class="material-symbols-outlined text-[20px]">menu_book</span></button><button class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors flex items-center justify-center" title="Settings" type="button"><span class="material-symbols-outlined text-[20px]">settings</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><aside class="fixed left-0 top-14 bottom-0 w-60 bg-surface-container-low z-40 flex flex-col justify-between p-space-sm"><div class="flex flex-col gap-space-sm"><div class="px-space-sm py-space-xs font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Pipelines &amp; Queues</div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded"><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs transition-colors bg-primary-container text-on-primary-container font-semibold rounded" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">speed</span><span>Overview</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-body-sm text-body-sm transition-colors" data-path="job-queues" href="#"><span class="material-symbols-outlined text-[18px]">view_list</span><span>Job Queues</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-body-sm text-body-sm transition-colors" data-path="execution-logs" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Execution Logs</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-body-sm text-body-sm transition-colors" data-path="worker-nodes" href="#"><span class="material-symbols-outlined text-[18px]">memory</span><span>Worker Nodes</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-body-sm text-body-sm transition-colors" data-path="payload-diff" href="#"><span class="material-symbols-outlined text-[18px]">data_object</span><span>Payload Diff</span></a></nav></div><div class="p-space-sm bg-surface-container rounded flex flex-col gap-space-xs"><div class="flex items-center justify-between font-label-caps text-label-caps text-on-surface-variant uppercase"><span>Memory Pool</span><span class="text-tertiary">64%</span></div><div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"><div class="bg-tertiary h-full w-[64%]"></div></div><div class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">2.56 GB / 4.00 GB</div></div></aside><div class="pl-60"><main class="w-full pt-14 bg-background min-h-screen px-margin py-space-lg"><div class="flex flex-col w-full gap-space-lg">
+<!-- 1. TOP METRICS / COMPACT SYSTEM SUMMARY BAR -->
+<section class="w-full bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md">
+<!-- Left: Counters -->
+<div class="flex flex-wrap items-center gap-space-sm sm:gap-space-md">
+<!-- Total Jobs -->
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant">Jobs:</span>
+<span class="font-mono-md text-mono-md font-semibold text-on-surface" id="stat-total">124</span>
+</div>
+<!-- Processing -->
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container shadow-[0_0_8px_rgba(76,215,246,0.15)]">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="font-label-caps text-label-caps uppercase text-tertiary font-semibold">Processing:</span>
+<span class="font-mono-md text-mono-md font-semibold text-tertiary" id="stat-processing">2</span>
+</div>
+<!-- Pending / Ready -->
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-caps text-label-caps uppercase text-secondary font-semibold">Pending:</span>
+<span class="font-mono-md text-mono-md font-semibold text-secondary" id="stat-pending">8</span>
+</div>
+<!-- Completed -->
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-caps text-label-caps uppercase text-primary font-semibold">Completed:</span>
+<span class="font-mono-md text-mono-md font-semibold text-primary" id="stat-completed">109</span>
+</div>
+<!-- Failed / DLQ -->
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-label-caps text-label-caps uppercase text-error font-semibold">DLQ:</span>
+<span class="font-mono-md text-mono-md font-semibold text-error" id="stat-failed">5</span>
+</div>
+<!-- Cluster Telemetry Spark Metrics -->
+<div class="hidden 2xl:flex items-center gap-space-md pl-space-md text-on-surface-variant font-mono-sm text-mono-sm">
+<div class="flex items-center gap-space-xs">
+<span class="text-on-surface-variant opacity-70">Throughput</span>
+<span class="text-tertiary font-semibold">42.8 j/m</span>
+</div>
+<div class="w-1 h-1 rounded-full bg-surface-container-highest"></div>
+<div class="flex items-center gap-space-xs">
+<span class="text-on-surface-variant opacity-70">Avg Latency</span>
+<span class="text-on-surface font-semibold">142ms</span>
+</div>
+<div class="w-1 h-1 rounded-full bg-surface-container-highest"></div>
+<div class="flex items-center gap-space-xs">
+<span class="text-on-surface-variant opacity-70">Redis Mem</span>
+<span class="text-primary font-semibold">18.4 MB</span>
+</div>
+</div>
+</div>
+<!-- Right: Operational Playground Actions -->
+<div class="flex items-center gap-space-xs flex-wrap">
+<button class="px-space-sm py-space-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-all duration-150 flex items-center gap-space-xs active:scale-95 shadow-sm" id="btn-flush" type="button">
+<span class="material-symbols-outlined text-[16px]">cleaning_services</span>
+<span>Flush Completed</span>
+</button>
+<button class="px-space-sm py-space-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-all duration-150 flex items-center gap-space-xs active:scale-95 shadow-sm" id="btn-pause" type="button">
+<span class="material-symbols-outlined text-[16px]" id="icon-pause">pause_circle</span>
+<span id="txt-pause">Pause Consumers</span>
+</button>
+<button class="px-space-md py-space-xs rounded bg-surface-container-high hover:bg-surface-bright text-tertiary font-mono-sm text-mono-sm font-semibold transition-all duration-150 flex items-center gap-space-xs active:scale-95 shadow-[0_0_12px_rgba(76,215,246,0.15)]" id="btn-simulate" type="button">
+<span class="material-symbols-outlined text-[16px] animate-spin-hover">bolt</span>
+<span>Simulate Load (+10)</span>
+</button>
+</div>
+</section>
+<!-- 2. MAIN PLAYGROUND LAYOUT (Two-Column Grid) -->
+<section class="w-full grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT COLUMN: Create Job Panel (5 cols) -->
+<div class="lg:col-span-5 bg-surface-container-low rounded-xl p-space-lg flex flex-col gap-space-md shadow-md">
+<div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">queue</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Create Job</h2>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container font-mono-sm text-mono-sm text-primary font-medium">POST /v1/jobs</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Submit an asynchronous task into the distributed priority pipeline.</p>
+</div>
+<form class="flex flex-col gap-space-md" id="form-create-job" onsubmit="event.preventDefault(); return false;">
+<!-- Job Type Selector -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Job Type</label>
+<div class="grid grid-cols-3 sm:grid-cols-5 gap-space-xs" id="job-type-selector">
+<button class="job-type-btn py-space-xs px-1 rounded bg-primary-container text-on-primary-container font-mono-sm text-mono-sm text-center font-medium transition-colors" data-type="email" type="button">email</button>
+<button class="job-type-btn py-space-xs px-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm text-center transition-colors" data-type="image_processing" type="button">image</button>
+<button class="job-type-btn py-space-xs px-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm text-center transition-colors" data-type="data_export" type="button">export</button>
+<button class="job-type-btn py-space-xs px-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm text-center transition-colors" data-type="notification" type="button">notify</button>
+<button class="job-type-btn py-space-xs px-1 rounded bg-surface-container text-on-surface-variant hover:text-error font-mono-sm text-mono-sm text-center transition-colors" data-type="fail" type="button">fail</button>
+</div>
+</div>
+<!-- Priority & Delay Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Priority Slider -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Priority</label>
+<span class="font-mono-sm text-mono-sm text-tertiary font-semibold" id="priority-badge">P10 (Urgent)</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container rounded p-space-xs">
+<button class="priority-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface transition-colors" data-p="1" type="button">1</button>
+<button class="priority-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface transition-colors" data-p="5" type="button">5</button>
+<button class="priority-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm bg-primary text-on-primary font-semibold transition-colors" data-p="10" type="button">10</button>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight">Higher priority preempts pending queues.</span>
+</div>
+<!-- Delay Pill Selector -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Delay (Seconds)</label>
+<span class="font-mono-sm text-mono-sm text-on-surface" id="delay-badge">0s (Immediate)</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container rounded p-space-xs">
+<button class="delay-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm bg-primary text-on-primary font-semibold transition-colors" data-d="0" type="button">0s</button>
+<button class="delay-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface transition-colors" data-d="5" type="button">5s</button>
+<button class="delay-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface transition-colors" data-d="30" type="button">30s</button>
+<button class="delay-pill flex-1 py-1 rounded text-center font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface transition-colors" data-d="60" type="button">60s</button>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight">Delayed tasks stage into Redis ZSET first.</span>
+</div>
+</div>
+<!-- Payload Editor -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[14px]">data_object</span>
+<span>Payload (JSON)</span>
+</label>
+<div class="flex items-center gap-space-xs">
+<button class="font-mono-sm text-mono-sm text-primary hover:underline" id="btn-format-payload" type="button">Format</button>
+<span class="text-on-surface-variant opacity-40">|</span>
+<button class="font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface" id="btn-reset-payload" type="button">Reset</button>
+</div>
+</div>
+<div class="relative rounded bg-surface-container-lowest overflow-hidden shadow-inner">
+<div class="flex items-stretch">
+<!-- Line numbers -->
+<div class="select-none py-space-sm px-space-xs font-mono-sm text-mono-sm text-on-surface-variant opacity-40 text-right w-8 bg-surface-container-low flex flex-col leading-5">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+</div>
+<!-- Textarea -->
+<textarea autocomplete="off" class="w-full bg-transparent text-tertiary font-mono-sm text-mono-sm leading-5 p-space-sm focus:outline-none resize-none selection:bg-primary selection:text-on-primary spellcheck-false" id="payload-input" rows="6">{
+  "recipient": "eng-leads@taskforge.dev",
+  "template": "weekly_metrics_digest",
+  "cluster_id": "us-east-42",
+  "user_id": 42
+}</textarea>
+</div>
+</div>
+</div>
+<!-- Idempotency Key -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Idempotency Key</label>
+<div class="flex items-center rounded bg-surface-container px-space-sm py-1.5 focus-within:ring-1 focus-within:ring-primary">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px] mr-space-xs">fingerprint</span>
+<input class="w-full bg-transparent font-mono-sm text-mono-sm text-on-surface focus:outline-none placeholder:text-on-surface-variant/40" id="idempotency-input" type="text" value="idemp_8fa93c21a4"/>
+<button class="text-on-surface-variant hover:text-on-surface" id="btn-regen-key" title="Regenerate Key" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+</button>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px]">Guarantees at-most-once processing across cluster workers.</span>
+</div>
+<!-- Submit Button CTA -->
+<button class="w-full mt-space-xs py-space-sm px-space-md rounded bg-primary text-on-primary font-mono-md text-mono-md font-semibold hover:bg-primary-fixed-dim transition-all duration-150 flex items-center justify-center gap-space-sm shadow-[0_0_16px_rgba(192,193,255,0.25)] active:scale-[0.98]" id="btn-submit-job" type="button">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+<span>CREATE JOB</span>
+<span class="ml-space-xs font-mono-sm text-mono-sm px-space-xs py-0.5 rounded bg-on-primary/20 text-on-primary">⌘↵</span>
+</button>
+</form>
+</div>
+<!-- RIGHT COLUMN: "Live Job" / Selected Job Visualization Panel (7 cols) -->
+<div class="lg:col-span-7 bg-surface-container-low rounded-xl p-space-lg flex flex-col gap-space-md shadow-md relative overflow-hidden">
+<!-- Top edge glow highlight -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-tertiary to-transparent opacity-60"></div>
+<!-- Header Bar -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-tertiary font-mono-sm text-mono-sm uppercase font-semibold">Live Job</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-mono-lg" id="live-job-id">#52 email</h3>
+<span class="px-space-xs py-0.5 rounded bg-surface-container font-mono-sm text-mono-sm text-tertiary font-medium" id="live-job-priority">P10 (Urgent)</span>
+</div>
+<div class="flex items-center gap-space-xs px-space-sm py-1 rounded bg-tertiary/10 shadow-[0_0_12px_rgba(76,215,246,0.2)]" id="live-job-status-badge">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="font-mono-sm text-mono-sm uppercase text-tertiary font-semibold tracking-wider">PROCESSING</span>
+</div>
+</div>
+<!-- Horizontal Lifecycle Visualization -->
+<div class="bg-surface-container rounded p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps uppercase">
+<span>Execution Flow</span>
+<span class="font-mono-sm text-mono-sm text-tertiary">Time in flight: 9.42s</span>
+</div>
+<!-- Progress Steps -->
+<div class="grid grid-cols-4 gap-space-xs items-center relative">
+<!-- Step 1: Created -->
+<div class="flex flex-col items-center gap-1 text-center">
+<div class="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-primary font-medium">CREATED</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">16:42:08.1</span>
+</div>
+<!-- Step 2: Queued -->
+<div class="flex flex-col items-center gap-1 text-center">
+<div class="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-primary font-medium">QUEUED</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">ready_queue</span>
+</div>
+<!-- Step 3: Processing (Active) -->
+<div class="flex flex-col items-center gap-1 text-center">
+<div class="w-7 h-7 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center shadow-[0_0_10px_rgba(76,215,246,0.6)] animate-pulse">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-tertiary font-bold">PROCESSING</span>
+<span class="font-mono-sm text-mono-sm text-tertiary text-[10px]">worker-a8f31</span>
+</div>
+<!-- Step 4: Completed -->
+<div class="flex flex-col items-center gap-1 text-center opacity-40">
+<div class="w-7 h-7 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[16px]">flag</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant font-medium">COMPLETED</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">Pending</span>
+</div>
+</div>
+<!-- Active Progress Bar -->
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-gradient-to-r from-primary to-tertiary h-full w-[68%] transition-all duration-300" id="live-progress-fill"></div>
+</div>
+<!-- Secondary Terminal Routes Indication -->
+<div class="flex items-center justify-between font-mono-sm text-mono-sm text-[11px] text-on-surface-variant pt-1">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Fallback: Retries Allowed (3x)</span>
+</span>
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span>DLQ Route: dlq.email.deadletter</span>
+</span>
+</div>
+</div>
+<!-- Live Execution Metadata Table -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs bg-surface-container rounded p-space-sm font-mono-sm text-mono-sm">
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">Worker Node</span>
+<a class="text-tertiary hover:underline font-semibold flex items-center gap-1 mt-0.5" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span id="meta-worker">worker-a8f31</span>
+</a>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">Retries</span>
+<span class="text-on-surface font-semibold mt-0.5" id="meta-retries">0 / 3 (exp-backoff)</span>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">Created Time</span>
+<span class="text-on-surface mt-0.5" id="meta-created">16:42:08.104 <span class="text-on-surface-variant opacity-70">(12s ago)</span></span>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">Lease Lock</span>
+<span class="text-primary font-semibold mt-0.5">38s left (12s renew)</span>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">Execution Time</span>
+<span class="text-on-surface mt-0.5" id="meta-started">9.24s in flight</span>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">RSS Memory</span>
+<span class="text-on-surface font-semibold mt-0.5">42.6 MB</span>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">CPU Thread</span>
+<span class="text-tertiary font-semibold mt-0.5">14.2% (1 core)</span>
+</div>
+<div class="flex flex-col p-space-xs">
+<span class="text-on-surface-variant uppercase text-[10px]">Target Queue</span>
+<span class="text-on-surface mt-0.5">ready:email:high</span>
+</div>
+</div>
+<!-- Live Worker Terminal Log Stream -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">terminal</span>
+<span>Worker Log Output</span>
+</span>
+<span class="font-mono-sm text-mono-sm text-[11px] text-tertiary animate-pulse">● STREAM LIVE</span>
+</div>
+<div class="rounded bg-surface-container-lowest p-space-sm font-mono-sm text-mono-sm flex flex-col gap-1 text-[11px] leading-relaxed overflow-x-auto shadow-inner h-32" id="worker-log-stream">
+<div class="text-on-surface-variant"><span class="text-on-surface opacity-50">[16:42:11.240]</span> <span class="text-tertiary">INFO</span> [worker-a8f31] Claimed job #52 from ready_queue</div>
+<div class="text-on-surface-variant"><span class="text-on-surface opacity-50">[16:42:11.312]</span> <span class="text-tertiary">INFO</span> Fetching digest parameters for user_id: 42...</div>
+<div class="text-on-surface-variant"><span class="text-on-surface opacity-50">[16:42:12.805]</span> <span class="text-secondary">DEBUG</span> Compiling HTML email template (digest_v2)...</div>
+<div class="text-on-surface-variant"><span class="text-on-surface opacity-50">[16:42:13.109]</span> <span class="text-primary font-semibold">EXEC</span> Dispatching via SMTP pool (smtp.relay.internal:587)...</div>
+</div>
+</div>
+<!-- Live Job Control Actions -->
+<div class="flex flex-wrap items-center justify-between gap-space-xs pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm flex items-center gap-1 transition-colors" id="btn-inspect-payload" type="button">
+<span class="material-symbols-outlined text-[16px]">data_object</span>
+<span>Inspect Payload</span>
+</button>
+<button class="px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm flex items-center gap-1 transition-colors" id="btn-clone-job" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Clone as New</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1.5 rounded bg-error-container text-error hover:bg-error hover:text-on-error font-mono-sm text-mono-sm flex items-center gap-1 transition-colors" id="btn-force-fail" type="button">
+<span class="material-symbols-outlined text-[16px]">dangerous</span>
+<span>Force Fail</span>
+</button>
+<button class="px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-error hover:text-on-error hover:bg-error font-mono-sm text-mono-sm flex items-center gap-1 transition-colors" id="btn-cancel-job" type="button">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+<span>Cancel Job</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. QUEUE STATE SECTION (4 Distinct Cards) -->
+<section class="w-full flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">account_tree</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight uppercase">Queue State</h2>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant ml-space-xs">Redis List &amp; Sorted Set Depths</span>
+</div>
+<div class="flex items-center gap-space-sm font-mono-sm text-mono-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> Ready (LPUSH/RPOP)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span> In-Flight</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span> ZSET Timers</span>
+</div>
+</div>
+<!-- 4 Columns Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Card 1: Ready Queue -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-caps text-label-caps uppercase text-on-surface font-bold tracking-wider">Ready Queue</span>
+</div>
+<span class="font-mono-sm text-mono-sm px-space-xs py-0.5 rounded bg-surface-container text-primary font-semibold" id="badge-ready-count">3 jobs</span>
+</div>
+<div class="flex flex-col gap-space-xs" id="ready-items-container">
+<!-- Item 1 -->
+<div class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-between cursor-pointer" onclick="selectJob('#53', 'image_processing', 'P5', 'READY', '—')">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-mono-sm text-mono-sm text-primary font-semibold">#53</span>
+<span class="font-mono-sm text-mono-sm text-on-surface truncate">image_processing</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">P5</span>
+<span class="font-mono-sm text-mono-sm px-1 rounded bg-surface-container-highest text-on-surface-variant text-[10px]">Ready 4s</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-between cursor-pointer" onclick="selectJob('#55', 'email', 'P5', 'READY', '—')">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-mono-sm text-mono-sm text-primary font-semibold">#55</span>
+<span class="font-mono-sm text-mono-sm text-on-surface truncate">email</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">P5</span>
+<span class="font-mono-sm text-mono-sm px-1 rounded bg-surface-container-highest text-on-surface-variant text-[10px]">Ready 2s</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-between cursor-pointer" onclick="selectJob('#56', 'data_export', 'P1', 'READY', '—')">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-mono-sm text-mono-sm text-primary font-semibold">#56</span>
+<span class="font-mono-sm text-mono-sm text-on-surface truncate">data_export</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">P1</span>
+<span class="font-mono-sm text-mono-sm px-1 rounded bg-surface-container-highest text-on-surface-variant text-[10px]">Ready 1s</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Processing Queue -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="font-label-caps text-label-caps uppercase text-tertiary font-bold tracking-wider">Processing</span>
+</div>
+<span class="font-mono-sm text-mono-sm px-space-xs py-0.5 rounded bg-surface-container text-tertiary font-semibold">2 jobs</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1 -->
+<div class="p-space-xs rounded bg-surface-container-high flex flex-col gap-1 cursor-pointer shadow-sm" onclick="selectJob('#52', 'email', 'P10', 'PROCESSING', 'worker-a8f31')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-tertiary font-bold">#52</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">email</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-tertiary text-[10px]">9s</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono-sm text-on-surface-variant">
+<span>➔ worker-a8f31</span>
+<span class="text-tertiary">running</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col gap-1 cursor-pointer" onclick="selectJob('#48', 'data_export', 'P5', 'PROCESSING', 'worker-c91d4')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-tertiary font-semibold">#48</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">data_export</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">24s</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono-sm text-on-surface-variant">
+<span>➔ worker-c91d4</span>
+<span class="text-tertiary">running</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Delayed (ZSET) -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[16px]">schedule</span>
+<span class="font-label-caps text-label-caps uppercase text-secondary font-bold tracking-wider">Delayed (ZSET)</span>
+</div>
+<span class="font-mono-sm text-mono-sm px-space-xs py-0.5 rounded bg-surface-container text-secondary font-semibold">1 job</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1 -->
+<div class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col gap-1 cursor-pointer" onclick="selectJob('#54', 'notification', 'P1', 'DELAYED', '—')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">#54</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">notification</span>
+</div>
+<span class="font-mono-sm text-mono-sm px-1 rounded bg-secondary/10 text-secondary text-[10px] font-semibold">in 8s</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono-sm text-on-surface-variant">
+<span>Scheduled: 16:42:28</span>
+<span class="text-secondary">ZREVRANGEBYSCORE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: FAILED / DLQ -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-error text-[16px]">error</span>
+<span class="font-label-caps text-label-caps uppercase text-error font-bold tracking-wider">DLQ / Dead Letter</span>
+</div>
+<span class="font-mono-sm text-mono-sm px-space-xs py-0.5 rounded bg-error-container text-error font-semibold">1 job</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1 -->
+<div class="p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col gap-1 cursor-pointer" onclick="selectJob('#41', 'fail', 'P5', 'FAILED', 'worker-a8f31')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-mono-sm text-mono-sm text-error font-semibold">#41</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">fail</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-error text-[10px]">3/3 retries</span>
+</div>
+<div class="font-mono-sm text-mono-sm text-[10px] text-error truncate">
+              TimeoutError: Connection refused upstream
+            </div>
+<div class="flex items-center justify-end mt-1">
+<button class="px-space-xs py-0.5 rounded bg-surface-container-highest hover:bg-primary hover:text-on-primary text-on-surface font-mono-sm text-mono-sm text-[10px] transition-colors flex items-center gap-1" onclick="event.stopPropagation(); alert('Job #41 re-queued to Ready Queue.');" type="button">
+<span class="material-symbols-outlined text-[12px]">replay</span>
+<span>Re-queue to Ready</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. WORKER STATUS & RECENT ACTIVITY (Two-Column Lower Section) -->
+<section class="w-full grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+<!-- Column 1: Worker Status -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[20px]">memory</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight uppercase">Workers</h2>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">4 Connected (2 Busy, 2 Idle)</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Worker 1 -->
+<div class="p-space-sm rounded bg-surface-container flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold">worker-a8f31</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[11px]">Uptime: 4h 12m | Concurrency: 1/1</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="text-right hidden sm:block">
+<div class="font-mono-sm text-mono-sm text-tertiary">Job #52 (email)</div>
+<div class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">CPU: 14% | RAM: 42MB</div>
+</div>
+<span class="px-space-xs py-1 rounded bg-tertiary/10 text-tertiary font-mono-sm text-mono-sm uppercase font-semibold">Processing</span>
+</div>
+</div>
+<!-- Worker 2 -->
+<div class="p-space-sm rounded bg-surface-container flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold">worker-c91d4</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[11px]">Uptime: 1h 45m | Concurrency: 1/1</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="text-right hidden sm:block">
+<div class="font-mono-sm text-mono-sm text-tertiary">Job #48 (data_export)</div>
+<div class="font-mono-sm text-mono-sm text-on-surface-variant text-[10px]">CPU: 38% | RAM: 88MB</div>
+</div>
+<span class="px-space-xs py-1 rounded bg-tertiary/10 text-tertiary font-mono-sm text-mono-sm uppercase font-semibold">Processing</span>
+</div>
+</div>
+<!-- Worker 3 -->
+<div class="p-space-sm rounded bg-surface-container flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold">worker-b27c1</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[11px]">Waiting for ready_queue jobs...</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="text-right hidden sm:block">
+<div class="font-mono-sm text-mono-sm text-on-surface-variant text-[11px]">Uptime: 8h 30m</div>
+</div>
+<span class="px-space-xs py-1 rounded bg-surface-container-highest text-on-surface-variant font-mono-sm text-mono-sm uppercase font-semibold">IDLE</span>
+</div>
+</div>
+<!-- Worker 4 -->
+<div class="p-space-sm rounded bg-surface-container flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold">worker-d04e8</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant text-[11px]">Waiting for ready_queue jobs...</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="text-right hidden sm:block">
+<div class="font-mono-sm text-mono-sm text-on-surface-variant text-[11px]">Uptime: 12h 04m</div>
+</div>
+<span class="px-space-xs py-1 rounded bg-surface-container-highest text-on-surface-variant font-mono-sm text-mono-sm uppercase font-semibold">IDLE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2: Recent Activity (Real-time Event Stream) -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">rss_feed</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight uppercase">Recent Activity</h2>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+<span>Live Tail</span>
+</span>
+</div>
+<div class="flex flex-col gap-space-xs font-mono-sm text-mono-sm text-[12px] overflow-hidden" id="activity-stream">
+<!-- Event 1 -->
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs">
+<span class="text-on-surface-variant opacity-60 shrink-0">[16:42:18]</span>
+<span class="text-tertiary">●</span>
+<span class="text-on-surface">Job <span class="font-semibold text-tertiary">#52</span> heartbeat refreshed by worker-a8f31 <span class="text-on-surface-variant opacity-70">(2s ago)</span></span>
+</div>
+<!-- Event 2 -->
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs">
+<span class="text-on-surface-variant opacity-60 shrink-0">[16:42:15]</span>
+<span class="text-secondary">●</span>
+<span class="text-on-surface">Job <span class="font-semibold text-secondary">#54</span> scheduled with 10s delay (ZSET) <span class="text-on-surface-variant opacity-70">(5s ago)</span></span>
+</div>
+<!-- Event 3 -->
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs">
+<span class="text-on-surface-variant opacity-60 shrink-0">[16:42:11]</span>
+<span class="text-tertiary">●</span>
+<span class="text-on-surface">Job <span class="font-semibold text-tertiary">#52</span> claimed by worker-a8f31 from READY <span class="text-on-surface-variant opacity-70">(9s ago)</span></span>
+</div>
+<!-- Event 4 -->
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs">
+<span class="text-on-surface-variant opacity-60 shrink-0">[16:42:08]</span>
+<span class="text-primary">●</span>
+<span class="text-on-surface">Job <span class="font-semibold text-primary">#52</span> created &amp; queued by API client <span class="text-on-surface-variant opacity-70">(12s ago)</span></span>
+</div>
+<!-- Event 5 -->
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs">
+<span class="text-on-surface-variant opacity-60 shrink-0">[16:41:52]</span>
+<span class="text-primary">●</span>
+<span class="text-on-surface">Job <span class="font-semibold text-primary">#51 (image_processing)</span> COMPLETED in 1.4s by worker-c91d4 <span class="text-on-surface-variant opacity-70">(28s ago)</span></span>
+</div>
+<!-- Event 6 -->
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs">
+<span class="text-on-surface-variant opacity-60 shrink-0">[16:41:30]</span>
+<span class="text-error">●</span>
+<span class="text-on-surface">Job <span class="font-semibold text-error">#49 (fail)</span> retry attempt 2/3 scheduled with 15s backoff <span class="text-on-surface-variant opacity-70">(50s ago)</span></span>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. RECENT JOBS TABLE -->
+<section class="w-full bg-surface-container-low rounded-xl p-space-lg flex flex-col gap-space-md shadow-md">
+<!-- Header with Filters & Search -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">view_list</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight uppercase">Recent Jobs</h2>
+</div>
+<!-- Filter Tabs -->
+<div class="flex items-center gap-space-xs flex-wrap" id="table-filter-tabs">
+<button class="tab-btn px-space-sm py-1 rounded bg-primary-container text-on-primary-container font-mono-sm text-mono-sm font-semibold transition-colors" data-filter="ALL" type="button">All (124)</button>
+<button class="tab-btn px-space-sm py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-colors" data-filter="PROCESSING" type="button">Processing (2)</button>
+<button class="tab-btn px-space-sm py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-colors" data-filter="READY" type="button">Ready (3)</button>
+<button class="tab-btn px-space-sm py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-colors" data-filter="DELAYED" type="button">Delayed (1)</button>
+<button class="tab-btn px-space-sm py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-colors" data-filter="COMPLETED" type="button">Completed (109)</button>
+<button class="tab-btn px-space-sm py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-mono-sm text-mono-sm transition-colors" data-filter="FAILED" type="button">Failed (5)</button>
+</div>
+<!-- Search input -->
+<div class="flex items-center rounded bg-surface-container px-space-sm py-1.5 focus-within:ring-1 focus-within:ring-primary w-full md:w-64">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px] mr-space-xs">search</span>
+<input class="w-full bg-transparent font-mono-sm text-mono-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none" id="job-search" placeholder="Filter by ID, worker, or payload..." type="text"/>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="overflow-x-auto rounded bg-surface-container-lowest">
+<table class="w-full text-left font-mono-sm text-mono-sm border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-caps text-label-caps uppercase h-9">
+<th class="py-space-xs px-space-md">ID</th>
+<th class="py-space-xs px-space-md">Type</th>
+<th class="py-space-xs px-space-md">Priority</th>
+<th class="py-space-xs px-space-md">Status</th>
+<th class="py-space-xs px-space-md">Retries</th>
+<th class="py-space-xs px-space-md">Worker</th>
+<th class="py-space-xs px-space-md">Created</th>
+<th class="py-space-xs px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody id="jobs-table-body">
+<!-- Job Row #52 (Selected) -->
+<tr class="job-table-row bg-surface-container/60 hover:bg-surface-container-high transition-colors cursor-pointer border-l-2 border-l-primary" data-job-id="#52" data-status="PROCESSING">
+<td class="py-space-sm px-space-md font-semibold text-tertiary">#52</td>
+<td class="py-space-sm px-space-md text-on-surface">email</td>
+<td class="py-space-sm px-space-md text-tertiary font-bold">10</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-tertiary/10 text-tertiary font-semibold text-[10px]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+<span>PROCESSING</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">0/3</td>
+<td class="py-space-sm px-space-md text-tertiary">worker-a8f31</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">16:42:08</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Inspect</button>
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Re-run</button>
+</div>
+</td>
+</tr>
+<!-- Job Row #51 -->
+<tr class="job-table-row hover:bg-surface-container-high transition-colors cursor-pointer" data-job-id="#51" data-status="COMPLETED">
+<td class="py-space-sm px-space-md font-semibold text-primary">#51</td>
+<td class="py-space-sm px-space-md text-on-surface">image_processing</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">5</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold text-[10px]">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>COMPLETED</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">0/3</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">worker-c91d4</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">16:41:52</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Inspect</button>
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Re-run</button>
+</div>
+</td>
+</tr>
+<!-- Job Row #49 -->
+<tr class="job-table-row hover:bg-surface-container-high transition-colors cursor-pointer" data-job-id="#49" data-status="RETRYING">
+<td class="py-space-sm px-space-md font-semibold text-secondary">#49</td>
+<td class="py-space-sm px-space-md text-on-surface">fail</td>
+<td class="py-space-sm px-space-md text-secondary font-bold">5</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/10 text-secondary font-semibold text-[10px]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>RETRYING</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md text-secondary font-semibold">2/3</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">—</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">16:41:30</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Inspect</button>
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Re-run</button>
+</div>
+</td>
+</tr>
+<!-- Job Row #48 -->
+<tr class="job-table-row hover:bg-surface-container-high transition-colors cursor-pointer" data-job-id="#48" data-status="PROCESSING">
+<td class="py-space-sm px-space-md font-semibold text-tertiary">#48</td>
+<td class="py-space-sm px-space-md text-on-surface">data_export</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">5</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-tertiary/10 text-tertiary font-semibold text-[10px]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>PROCESSING</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">0/3</td>
+<td class="py-space-sm px-space-md text-tertiary">worker-c91d4</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">16:40:15</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Inspect</button>
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Re-run</button>
+</div>
+</td>
+</tr>
+<!-- Job Row #41 -->
+<tr class="job-table-row hover:bg-surface-container-high transition-colors cursor-pointer" data-job-id="#41" data-status="FAILED">
+<td class="py-space-sm px-space-md font-semibold text-error">#41</td>
+<td class="py-space-sm px-space-md text-on-surface">fail</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">1</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-error-container text-error font-semibold text-[10px]">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span>FAILED</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md text-error font-semibold">3/3</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">worker-a8f31</td>
+<td class="py-space-sm px-space-md text-on-surface-variant">16:38:02</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Inspect</button>
+<button class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]" type="button">Re-run</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Vanilla JS for playground interactions -->
+<script>
+  let isPaused = false;
+  let jobCounter = 56;
+  let activePriority = 10;
+  let activeDelay = 0;
+  let activeJobType = 'email';
+
+  // Templates mapping
+  const templates = {
+    email: JSON.stringify({
+      recipient: "eng-leads@taskforge.dev",
+      template: "weekly_metrics_digest",
+      cluster_id: "us-east-42",
+      user_id: 42
+    }, null, 2),
+    image_processing: JSON.stringify({
+      asset_id: "img_9801_raw.png",
+      operations: ["thumbnail_webp", "blur_hash", "strip_exif"],
+      destination_bucket: "s3://assets.taskforge.dev/cdn/"
+    }, null, 2),
+    data_export: JSON.stringify({
+      organization_id: "org_alpha_9",
+      format: "parquet",
+      filters: { created_after: "2025-01-01T00:00:00Z" },
+      notify_webhook: "https://api.internal/v1/webhook"
+    }, null, 2),
+    notification: JSON.stringify({
+      channel: "slack_ops",
+      severity: "warning",
+      message: "Worker node pool memory crossed 64% threshold",
+      delivery_window: "immediate"
+    }, null, 2),
+    fail: JSON.stringify({
+      trigger_synthetic_failure: true,
+      error_class: "UpstreamConnectionRefused",
+      retry_budget: 3
+    }, null, 2)
+  };
+
+  // Job Type selector buttons
+  document.querySelectorAll('.job-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.job-type-btn').forEach(b => {
+        b.classList.remove('bg-primary-container', 'text-on-primary-container');
+        b.classList.add('bg-surface-container', 'text-on-surface-variant');
+      });
+      btn.classList.add('bg-primary-container', 'text-on-primary-container');
+      btn.classList.remove('bg-surface-container', 'text-on-surface-variant');
+
+      activeJobType = btn.dataset.type;
+      if (templates[activeJobType]) {
+        document.getElementById('payload-input').value = templates[activeJobType];
+      }
+    });
+  });
+
+  // Priority selector pills
+  document.querySelectorAll('.priority-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.priority-pill').forEach(b => {
+        b.classList.remove('bg-primary', 'text-on-primary', 'font-semibold');
+        b.classList.add('text-on-surface-variant');
+      });
+      btn.classList.add('bg-primary', 'text-on-primary', 'font-semibold');
+      btn.classList.remove('text-on-surface-variant');
+
+      activePriority = parseInt(btn.dataset.p, 10);
+      const label = activePriority === 10 ? 'P10 (Urgent)' : (activePriority === 5 ? 'P5 (Standard)' : 'P1 (Background)');
+      document.getElementById('priority-badge').textContent = label;
+    });
+  });
+
+  // Delay selector pills
+  document.querySelectorAll('.delay-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.delay-pill').forEach(b => {
+        b.classList.remove('bg-primary', 'text-on-primary', 'font-semibold');
+        b.classList.add('text-on-surface-variant');
+      });
+      btn.classList.add('bg-primary', 'text-on-primary', 'font-semibold');
+      btn.classList.remove('text-on-surface-variant');
+
+      activeDelay = parseInt(btn.dataset.d, 10);
+      document.getElementById('delay-badge').textContent = activeDelay === 0 ? '0s (Immediate)' : activeDelay + 's delay';
+    });
+  });
+
+  // Format & reset payload
+  document.getElementById('btn-format-payload').addEventListener('click', () => {
+    try {
+      const raw = document.getElementById('payload-input').value;
+      const parsed = JSON.parse(raw);
+      document.getElementById('payload-input').value = JSON.stringify(parsed, null, 2);
+    } catch(e) {
+      alert('Invalid JSON in payload field: ' + e.message);
+    }
+  });
+
+  document.getElementById('btn-reset-payload').addEventListener('click', () => {
+    if (templates[activeJobType]) {
+      document.getElementById('payload-input').value = templates[activeJobType];
+    }
+  });
+
+  // Regenerate idempotency key
+  document.getElementById('btn-regen-key').addEventListener('click', () => {
+    const randomHex = Math.random().toString(16).substring(2, 12);
+    document.getElementById('idempotency-input').value = 'idemp_' + randomHex;
+  });
+
+  // Pause consumers toggle
+  const btnPause = document.getElementById('btn-pause');
+  btnPause.addEventListener('click', () => {
+    isPaused = !isPaused;
+    const txt = document.getElementById('txt-pause');
+    const icon = document.getElementById('icon-pause');
+    if (isPaused) {
+      txt.textContent = 'Resume Consumers';
+      icon.textContent = 'play_circle';
+      btnPause.classList.add('bg-error-container', 'text-error');
+    } else {
+      txt.textContent = 'Pause Consumers';
+      icon.textContent = 'pause_circle';
+      btnPause.classList.remove('bg-error-container', 'text-error');
+    }
+  });
+
+  // Flush completed
+  document.getElementById('btn-flush').addEventListener('click', () => {
+    const completedBadge = document.getElementById('stat-completed');
+    completedBadge.textContent = '0';
+    alert('Flushed all completed jobs from Redis persistence table.');
+  });
+
+  // Simulate load (+10 Jobs)
+  document.getElementById('btn-simulate').addEventListener('click', () => {
+    const totalStat = document.getElementById('stat-total');
+    const pendingStat = document.getElementById('stat-pending');
+    totalStat.textContent = parseInt(totalStat.textContent, 10) + 10;
+    pendingStat.textContent = parseInt(pendingStat.textContent, 10) + 10;
+    
+    // Add timeline event
+    addTimelineEvent('Simulated load burst: +10 jobs inserted via batch pipeline');
+  });
+
+  // Submit Job
+  document.getElementById('btn-submit-job').addEventListener('click', createJobAction);
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      createJobAction();
+    }
+  });
+
+  function createJobAction() {
+    jobCounter += 1;
+    const newId = '#' + jobCounter;
+    
+    // Update stats
+    const totalStat = document.getElementById('stat-total');
+    totalStat.textContent = parseInt(totalStat.textContent, 10) + 1;
+
+    // Add to Ready Queue list representation
+    const readyItems = document.getElementById('ready-items-container');
+    const newItem = document.createElement('div');
+    newItem.className = 'p-space-xs rounded bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-between cursor-pointer';
+    newItem.onclick = () => selectJob(newId, activeJobType, 'P' + activePriority, 'READY', '—');
+    newItem.innerHTML = `
+      <div class="flex items-center gap-space-xs min-w-0">
+        <span class="font-mono-sm text-mono-sm text-primary font-semibold">${newId}</span>
+        <span class="font-mono-sm text-mono-sm text-on-surface truncate">${activeJobType}</span>
+      </div>
+      <div class="flex items-center gap-space-xs">
+        <span class="font-mono-sm text-mono-sm text-on-surface-variant">P${activePriority}</span>
+        <span class="font-mono-sm text-mono-sm px-1 rounded bg-surface-container-highest text-on-surface-variant text-[10px]">Ready 0s</span>
+      </div>
+    `;
+    readyItems.prepend(newItem);
+
+    // Add table row
+    const tbody = document.getElementById('jobs-table-body');
+    const row = document.createElement('tr');
+    row.dataset.jobId = newId;
+    row.dataset.status = 'READY';
+    row.className = 'job-table-row hover:bg-surface-container-high transition-colors cursor-pointer';
+    row.onclick = () => selectJob(newId, activeJobType, 'P' + activePriority, 'READY', '—');
+    row.innerHTML = `
+      <td class="py-space-sm px-space-md font-semibold text-primary">${newId}</td>
+      <td class="py-space-sm px-space-md text-on-surface">${activeJobType}</td>
+      <td class="py-space-sm px-space-md text-on-surface-variant">${activePriority}</td>
+      <td class="py-space-sm px-space-md">
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold text-[10px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          <span>READY</span>
+        </span>
+      </td>
+      <td class="py-space-sm px-space-md text-on-surface-variant">0/3</td>
+      <td class="py-space-sm px-space-md text-on-surface-variant">—</td>
+      <td class="py-space-sm px-space-md text-on-surface-variant">Just now</td>
+      <td class="py-space-sm px-space-md text-right">
+        <div class="flex items-center justify-end gap-space-xs">
+          <button type="button" class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]">Inspect</button>
+          <button type="button" class="px-space-xs py-0.5 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface text-[10px]">Re-run</button>
+        </div>
+      </td>
+    `;
+    tbody.prepend(row);
+
+    // Add activity log
+    addTimelineEvent(`Job ${newId} (${activeJobType}) queued with priority P${activePriority}`);
+
+    // Regenerate Idempotency key for next creation
+    document.getElementById('btn-regen-key').click();
+
+    // Select this job
+    selectJob(newId, activeJobType, 'P' + activePriority, 'READY', '—');
+  }
+
+  function addTimelineEvent(msg) {
+    const container = document.getElementById('activity-stream');
+    const el = document.createElement('div');
+    el.className = 'p-space-xs rounded hover:bg-surface-container transition-colors flex items-start gap-space-xs animate-fadeIn';
+    el.innerHTML = `
+      <span class="text-on-surface-variant opacity-60 shrink-0">[${new Date().toTimeString().split(' ')[0]}]</span>
+      <span class="text-primary">●</span>
+      <span class="text-on-surface">${msg} <span class="text-on-surface-variant opacity-70">(just now)</span></span>
+    `;
+    container.prepend(el);
+  }
+
+  // Row selection updater
+  function selectJob(id, type, priority, status, worker) {
+    document.getElementById('live-job-id').textContent = `${id} ${type}`;
+    document.getElementById('live-job-priority').textContent = priority;
+    document.getElementById('meta-worker').textContent = worker;
+
+    const badge = document.getElementById('live-job-status-badge');
+    badge.innerHTML = `
+      <span class="w-2 h-2 rounded-full ${status === 'PROCESSING' ? 'bg-tertiary animate-ping' : (status === 'FAILED' ? 'bg-error' : 'bg-primary')}"></span>
+      <span class="font-mono-sm text-mono-sm uppercase ${status === 'PROCESSING' ? 'text-tertiary' : (status === 'FAILED' ? 'text-error' : 'text-primary')} font-semibold tracking-wider">${status}</span>
+    `;
+
+    // Highlight row in table
+    document.querySelectorAll('.job-table-row').forEach(r => {
+      r.classList.remove('border-l-2', 'border-l-primary', 'bg-surface-container/60');
+      if (r.dataset.jobId === id) {
+        r.classList.add('border-l-2', 'border-l-primary', 'bg-surface-container/60');
+      }
+    });
+  }
+
+  // Table row click binding
+  document.querySelectorAll('.job-table-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.jobId;
+      const cells = row.querySelectorAll('td');
+      const type = cells[1].textContent.trim();
+      const priority = 'P' + cells[2].textContent.trim();
+      const status = row.dataset.status;
+      const worker = cells[5].textContent.trim();
+      selectJob(id, type, priority, status, worker);
+    });
+  });
+
+  // Table filter tabs
+  document.querySelectorAll('.tab-btn').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(t => {
+        t.classList.remove('bg-primary-container', 'text-on-primary-container');
+        t.classList.add('bg-surface-container', 'text-on-surface-variant');
+      });
+      tab.classList.add('bg-primary-container', 'text-on-primary-container');
+      tab.classList.remove('bg-surface-container', 'text-on-surface-variant');
+
+      const filter = tab.dataset.filter;
+      document.querySelectorAll('.job-table-row').forEach(row => {
+        if (filter === 'ALL' || row.dataset.status === filter) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Job search input filter
+  document.getElementById('job-search').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.job-table-row').forEach(row => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+
+  // Interactive Live Actions
+  document.getElementById('btn-cancel-job').addEventListener('click', () => {
+    alert('Issued termination signal (SIGKILL) to worker-a8f31 for current job.');
+  });
+  document.getElementById('btn-force-fail').addEventListener('click', () => {
+    alert('Force dispatched failure exception to Dead Letter Queue for current job.');
+  });
+  document.getElementById('btn-inspect-payload').addEventListener('click', () => {
+    alert('Opening Full Inset Inspector Drawer for Job #52.');
+  });
+  document.getElementById('btn-clone-job').addEventListener('click', () => {
+    createJobAction();
+  });
+</script></main></div></body></html>
