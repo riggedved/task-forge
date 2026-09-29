@@ -17,6 +17,7 @@ const TEMPLATES: Record<string, string> = {
       template: 'weekly_metrics_digest',
       cluster_id: 'us-east-42',
       user_id: 42,
+      duration: 10,
     },
     null,
     2
@@ -26,6 +27,7 @@ const TEMPLATES: Record<string, string> = {
       asset_id: 'img_9801_raw.png',
       operations: ['thumbnail_webp', 'blur_hash', 'strip_exif'],
       destination_bucket: 's3://assets.taskforge.dev/cdn/',
+      duration: 10,
     },
     null,
     2
@@ -36,6 +38,7 @@ const TEMPLATES: Record<string, string> = {
       format: 'parquet',
       filters: { created_after: '2026-01-01T00:00:00Z' },
       notify_webhook: 'https://api.internal/v1/webhook',
+      duration: 10,
     },
     null,
     2
@@ -46,6 +49,7 @@ const TEMPLATES: Record<string, string> = {
       severity: 'warning',
       message: 'Worker node pool memory crossed threshold',
       delivery_window: 'immediate',
+      duration: 10,
     },
     null,
     2
@@ -55,6 +59,7 @@ const TEMPLATES: Record<string, string> = {
       trigger_synthetic_failure: true,
       error_class: 'SimulatedWorkerError',
       retry_budget: 3,
+      duration: 10,
     },
     null,
     2
@@ -66,19 +71,69 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
   cloneJobData,
 }) => {
   const [jobType, setJobType] = useState<string>('email');
+
+  // Priority state
   const [priority, setPriority] = useState<number>(10);
+  const [isCustomPriority, setIsCustomPriority] = useState<boolean>(false);
+  const [customPriorityInput, setCustomPriorityInput] = useState<string>('25');
+
+  // Duration state (seconds)
+  const [duration, setDuration] = useState<number>(10);
+  const [isCustomDuration, setIsCustomDuration] = useState<boolean>(false);
+  const [customDurationInput, setCustomDurationInput] = useState<string>('15');
+
+  // Delay state (seconds)
   const [delaySeconds, setDelaySeconds] = useState<number>(0);
+  const [isCustomDelay, setIsCustomDelay] = useState<boolean>(false);
+  const [customDelayInput, setCustomDelayInput] = useState<string>('120');
+
+  // Payload & Submission state
   const [payloadText, setPayloadText] = useState<string>(TEMPLATES['email']);
   const [idempotencyKey, setIdempotencyKey] = useState<string>(generateIdempotencyKey());
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Helper to sync duration into payload JSON if currently valid
+  const updatePayloadDuration = (d: number) => {
+    try {
+      const parsed = JSON.parse(payloadText);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        parsed.duration = d;
+        setPayloadText(JSON.stringify(parsed, null, 2));
+      }
+    } catch {
+      // payloadText may be currently edited or invalid JSON, ignore
+    }
+  };
+
   // Handle clone action from Live Job
   useEffect(() => {
     if (cloneJobData) {
       setJobType(cloneJobData.type);
-      setPriority(cloneJobData.priority);
+
+      // Restore priority
+      const p = cloneJobData.priority;
+      setPriority(p);
+      if ([1, 5, 10].includes(p)) {
+        setIsCustomPriority(false);
+      } else {
+        setIsCustomPriority(true);
+        setCustomPriorityInput(String(p));
+      }
+
+      // Restore duration if present in payload
+      const payloadDuration = cloneJobData.payload?.duration;
+      if (typeof payloadDuration === 'number') {
+        setDuration(payloadDuration);
+        if ([10, 30, 60].includes(payloadDuration)) {
+          setIsCustomDuration(false);
+        } else {
+          setIsCustomDuration(true);
+          setCustomDurationInput(String(payloadDuration));
+        }
+      }
+
       setPayloadText(JSON.stringify(cloneJobData.payload || {}, null, 2));
       setIdempotencyKey(generateIdempotencyKey());
       setErrorMsg(null);
@@ -89,9 +144,87 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
   const handleTypeChange = (type: string) => {
     setJobType(type);
     if (TEMPLATES[type]) {
-      setPayloadText(TEMPLATES[type]);
+      try {
+        const parsed = JSON.parse(TEMPLATES[type]);
+        parsed.duration = duration;
+        setPayloadText(JSON.stringify(parsed, null, 2));
+      } catch {
+        setPayloadText(TEMPLATES[type]);
+      }
     }
     setErrorMsg(null);
+  };
+
+  // Priority handlers
+  const handleSelectPriorityPreset = (p: number) => {
+    setIsCustomPriority(false);
+    setPriority(p);
+  };
+
+  const handleSelectCustomPriority = () => {
+    setIsCustomPriority(true);
+    const parsed = parseInt(customPriorityInput, 10);
+    const valid = isNaN(parsed) || parsed < 1 ? 25 : parsed;
+    setCustomPriorityInput(String(valid));
+    setPriority(valid);
+  };
+
+  const handleCustomPriorityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCustomPriorityInput(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      setPriority(parsed);
+    }
+  };
+
+  // Duration handlers
+  const handleSelectDurationPreset = (d: number) => {
+    setIsCustomDuration(false);
+    setDuration(d);
+    updatePayloadDuration(d);
+  };
+
+  const handleSelectCustomDuration = () => {
+    setIsCustomDuration(true);
+    const parsed = parseInt(customDurationInput, 10);
+    const valid = isNaN(parsed) || parsed < 1 ? 15 : parsed;
+    setCustomDurationInput(String(valid));
+    setDuration(valid);
+    updatePayloadDuration(valid);
+  };
+
+  const handleCustomDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCustomDurationInput(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      setDuration(parsed);
+      updatePayloadDuration(parsed);
+    }
+  };
+
+  // Delay handlers
+  const handleSelectDelayPreset = (d: number) => {
+    setIsCustomDelay(false);
+    setDelaySeconds(d);
+  };
+
+  const handleSelectCustomDelay = () => {
+    setIsCustomDelay(true);
+    const parsed = parseInt(customDelayInput, 10);
+    const valid = isNaN(parsed) || parsed < 0 ? 120 : parsed;
+    setCustomDelayInput(String(valid));
+    setDelaySeconds(valid);
+  };
+
+  const handleCustomDelayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCustomDelayInput(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      setDelaySeconds(parsed);
+    }
   };
 
   const handleFormatPayload = () => {
@@ -105,13 +238,44 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
   };
 
   const handleResetPayload = () => {
-    setPayloadText(TEMPLATES[jobType] || '{}');
+    if (TEMPLATES[jobType]) {
+      try {
+        const parsed = JSON.parse(TEMPLATES[jobType]);
+        parsed.duration = duration;
+        setPayloadText(JSON.stringify(parsed, null, 2));
+      } catch {
+        setPayloadText(TEMPLATES[jobType] || '{}');
+      }
+    } else {
+      setPayloadText('{}');
+    }
     setErrorMsg(null);
   };
 
   const handleSubmit = async () => {
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    // Validate Priority
+    const effectivePriority = isCustomPriority ? parseInt(customPriorityInput, 10) : priority;
+    if (isNaN(effectivePriority) || effectivePriority < 1) {
+      setErrorMsg('Priority must be a valid positive integer (≥ 1).');
+      return;
+    }
+
+    // Validate Duration
+    const effectiveDuration = isCustomDuration ? parseInt(customDurationInput, 10) : duration;
+    if (isNaN(effectiveDuration) || effectiveDuration < 1) {
+      setErrorMsg('Duration must be a valid positive number of seconds (≥ 1).');
+      return;
+    }
+
+    // Validate Delay
+    const effectiveDelay = isCustomDelay ? parseInt(customDelayInput, 10) : delaySeconds;
+    if (isNaN(effectiveDelay) || effectiveDelay < 0) {
+      setErrorMsg('Delay must be a valid non-negative integer (≥ 0).');
+      return;
+    }
 
     let parsedPayload: Record<string, any>;
     try {
@@ -121,11 +285,14 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
       return;
     }
 
+    // Ensure selected duration is in payload
+    parsedPayload.duration = effectiveDuration;
+
     const payload: JobCreateRequest = {
       type: jobType,
       payload: parsedPayload,
-      priority,
-      delay_seconds: delaySeconds,
+      priority: effectivePriority,
+      delay_seconds: effectiveDelay,
       idempotency_key: idempotencyKey.trim() || undefined,
     };
 
@@ -150,9 +317,23 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
     }
   };
 
-  const priorityLabel =
-    priority === 10 ? 'P10 (Urgent)' : priority === 5 ? 'P5 (Standard)' : 'P1 (Background)';
-  const delayLabel = delaySeconds === 0 ? '0s (Immediate)' : `${delaySeconds}s delay`;
+  const priorityLabel = isCustomPriority
+    ? `P${priority} (Custom)`
+    : priority === 10
+    ? 'P10 (Urgent)'
+    : priority === 5
+    ? 'P5 (Standard)'
+    : 'P1 (Background)';
+
+  const durationLabel = isCustomDuration
+    ? `${duration}s (Custom)`
+    : `${duration}s (${duration === 10 ? 'Default' : duration === 30 ? 'Medium' : 'Long'})`;
+
+  const delayLabel = isCustomDelay
+    ? `${delaySeconds}s (Custom)`
+    : delaySeconds === 0
+    ? '0s (Immediate)'
+    : `${delaySeconds}s delay`;
 
   const linesCount = payloadText.split('\n').length;
   const lineNumbers = Array.from({ length: Math.max(linesCount, 6) }, (_, i) => i + 1);
@@ -179,14 +360,14 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
       {errorMsg && (
         <div className="p-space-sm rounded bg-error-container text-on-error-container text-body-sm flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button onClick={() => setErrorMsg(null)} className="text-on-error-container font-mono-sm">✕</button>
+          <button onClick={() => setErrorMsg(null)} className="text-on-error-container font-mono-sm cursor-pointer">✕</button>
         </div>
       )}
 
       {successMsg && (
         <div className="p-space-sm rounded bg-primary-container text-on-primary-container text-body-sm flex items-center justify-between">
           <span>{successMsg}</span>
-          <button onClick={() => setSuccessMsg(null)} className="text-on-primary-container font-mono-sm">✕</button>
+          <button onClick={() => setSuccessMsg(null)} className="text-on-primary-container font-mono-sm cursor-pointer">✕</button>
         </div>
       )}
 
@@ -198,7 +379,7 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
         }}
         onKeyDown={handleKeyDown}
       >
-        {/* Job Type Selector */}
+        {/* 1. Job Type Selector */}
         <div className="flex flex-col gap-space-xs">
           <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
             Job Type
@@ -232,78 +413,172 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
           </div>
         </div>
 
-        {/* Priority & Delay Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-          {/* Priority */}
-          <div className="flex flex-col gap-space-xs">
-            <div className="flex items-center justify-between">
-              <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
-                Priority
-              </label>
-              <span className="font-mono-sm text-mono-sm text-tertiary font-semibold">
-                {priorityLabel}
-              </span>
-            </div>
-            <div className="flex items-center gap-space-xs bg-surface-container rounded p-space-xs">
-              {[1, 5, 10].map((p) => {
-                const isSelected = priority === p;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPriority(p)}
-                    className={`flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-primary text-on-primary font-semibold'
-                        : 'text-on-surface-variant hover:text-on-surface'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-            <span className="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight">
-              Higher priority pops ahead via Redis ZSET (-priority score).
+        {/* 2. Priority Row */}
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center justify-between">
+            <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+              Priority
+            </label>
+            <span className="font-mono-sm text-mono-sm text-tertiary font-semibold">
+              {priorityLabel}
             </span>
           </div>
+          <div className="flex items-center gap-space-xs bg-surface-container rounded p-space-xs flex-wrap sm:flex-nowrap">
+            {[1, 5, 10].map((p) => {
+              const isSelected = !isCustomPriority && priority === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handleSelectPriorityPreset(p)}
+                  className={`flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary text-on-primary font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            {!isCustomPriority ? (
+              <button
+                type="button"
+                onClick={handleSelectCustomPriority}
+                className="flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer text-on-surface-variant hover:text-on-surface"
+              >
+                Custom
+              </button>
+            ) : (
+              <div className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-0.5 px-2 rounded bg-primary text-on-primary font-mono-sm text-mono-sm font-semibold transition-all">
+                <span className="text-[12px] whitespace-nowrap">Custom:</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={customPriorityInput}
+                  onChange={handleCustomPriorityChange}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-12 px-1 py-0.5 rounded bg-surface-container-lowest text-on-surface text-center font-mono-sm text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-secondary border border-surface-container-high/60"
+                  placeholder="25"
+                />
+              </div>
+            )}
+          </div>
+          <span className="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight">
+            Higher priority pops ahead via Redis ZSET (-priority score).
+          </span>
+        </div>
 
-          {/* Delay */}
-          <div className="flex flex-col gap-space-xs">
-            <div className="flex items-center justify-between">
-              <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
-                Delay (Seconds)
-              </label>
-              <span className="font-mono-sm text-mono-sm text-on-surface">
-                {delayLabel}
-              </span>
-            </div>
-            <div className="flex items-center gap-space-xs bg-surface-container rounded p-space-xs">
-              {[0, 5, 30, 60].map((d) => {
-                const isSelected = delaySeconds === d;
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDelaySeconds(d)}
-                    className={`flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-primary text-on-primary font-semibold'
-                        : 'text-on-surface-variant hover:text-on-surface'
-                    }`}
-                  >
-                    {d}s
-                  </button>
-                );
-              })}
-            </div>
-            <span className="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight">
-              Delayed tasks stage into delayed_queue ZSET first.
+        {/* 3. Duration Row */}
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center justify-between">
+            <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+              Duration (Seconds)
+            </label>
+            <span className="font-mono-sm text-mono-sm text-tertiary font-semibold">
+              {durationLabel}
             </span>
+          </div>
+          <div className="flex items-center gap-space-xs bg-surface-container rounded p-space-xs flex-wrap sm:flex-nowrap">
+            {[10, 30, 60].map((d) => {
+              const isSelected = !isCustomDuration && duration === d;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => handleSelectDurationPreset(d)}
+                  className={`flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary text-on-primary font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+            {!isCustomDuration ? (
+              <button
+                type="button"
+                onClick={handleSelectCustomDuration}
+                className="flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer text-on-surface-variant hover:text-on-surface"
+              >
+                Custom
+              </button>
+            ) : (
+              <div className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-0.5 px-2 rounded bg-primary text-on-primary font-mono-sm text-mono-sm font-semibold transition-all">
+                <span className="text-[12px] whitespace-nowrap">Custom:</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={customDurationInput}
+                  onChange={handleCustomDurationChange}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-12 px-1 py-0.5 rounded bg-surface-container-lowest text-on-surface text-center font-mono-sm text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-secondary border border-surface-container-high/60"
+                  placeholder="15"
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Payload Editor */}
+        {/* 4. Delay Row */}
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center justify-between">
+            <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+              Delay (Seconds)
+            </label>
+            <span className="font-mono-sm text-mono-sm text-on-surface">
+              {delayLabel}
+            </span>
+          </div>
+          <div className="flex items-center gap-space-xs bg-surface-container rounded p-space-xs flex-wrap sm:flex-nowrap">
+            {[0, 5, 30, 60].map((d) => {
+              const isSelected = !isCustomDelay && delaySeconds === d;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => handleSelectDelayPreset(d)}
+                  className={`flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary text-on-primary font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+            {!isCustomDelay ? (
+              <button
+                type="button"
+                onClick={handleSelectCustomDelay}
+                className="flex-1 py-1 rounded text-center font-mono-sm text-mono-sm transition-colors cursor-pointer text-on-surface-variant hover:text-on-surface"
+              >
+                Custom
+              </button>
+            ) : (
+              <div className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-0.5 px-2 rounded bg-primary text-on-primary font-mono-sm text-mono-sm font-semibold transition-all">
+                <span className="text-[12px] whitespace-nowrap">Custom:</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={customDelayInput}
+                  onChange={handleCustomDelayChange}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-14 px-1 py-0.5 rounded bg-surface-container-lowest text-on-surface text-center font-mono-sm text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-secondary border border-surface-container-high/60"
+                  placeholder="120"
+                />
+              </div>
+            )}
+          </div>
+          <span className="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight">
+            Delayed tasks stage into delayed_queue ZSET first.
+          </span>
+        </div>
+
+        {/* 5. Payload Editor */}
         <div className="flex flex-col gap-space-xs">
           <div className="flex items-center justify-between">
             <label className="font-label-caps text-label-caps uppercase text-on-surface-variant flex items-center gap-space-xs">
@@ -349,7 +624,7 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
           </div>
         </div>
 
-        {/* Idempotency Key */}
+        {/* 6. Idempotency Key */}
         <div className="flex flex-col gap-space-xs">
           <label className="font-label-caps text-label-caps uppercase text-on-surface-variant">
             Idempotency Key
@@ -379,7 +654,7 @@ export const CreateJobPanel: React.FC<CreateJobPanelProps> = ({
           </span>
         </div>
 
-        {/* Submit Button CTA */}
+        {/* 7. Submit Button CTA */}
         <button
           type="button"
           onClick={handleSubmit}

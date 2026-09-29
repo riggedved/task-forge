@@ -3,6 +3,7 @@ import sys
 import subprocess
 import uuid
 import time
+import threading
 from typing import Any
 from fastapi import FastAPI, HTTPException, Depends, Query, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from app.database import SessionLocal, engine, Base
 from app.models import Job, JobEvent, Worker, WorkerEvent
 from app.redis_client import redis_client
 from app.events import record_job_event, record_worker_event
+from app.reaper import recover_expired_jobs
 from app.schemas import (
     JobCreateRequest,
     JobCreateResponse,
@@ -66,6 +68,19 @@ FAILED_QUEUE = "failed_queue"
 # In-memory dictionary tracking managed subprocesses by worker_id
 _managed_workers: dict[str, subprocess.Popen] = {}
 WORKER_HEARTBEAT_TIMEOUT = 30.0  # seconds until worker without heartbeat considered OFFLINE
+
+
+# Background reaper thread: sweeps expired leases every 5s to self-heal orphaned tasks
+def _reaper_background_loop():
+    while True:
+        try:
+            recover_expired_jobs()
+        except Exception:
+            pass
+        time.sleep(5)
+
+_reaper_thread = threading.Thread(target=_reaper_background_loop, daemon=True)
+_reaper_thread.start()
 
 
 def get_db():
@@ -471,29 +486,48 @@ def stop_worker(worker_id: str, db: Session = Depends(get_db)):
             message=f"Worker {worker_id} is offline/stale"
         )
 
-    # Set stop flag in Redis (expires in 300s)
-    try:
-        redis_client.set(f"worker_stop:{worker_id}", "1", ex=300)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to issue stop signal via Redis: {e}"
-        )
+    # 1. Immediately terminate the worker subprocess (crash / abrupt stop simulation)
+    proc = _managed_workers.pop(worker_id, None)
+    if proc:
+        try:
+            if os.name == "nt":
+                # On Windows, kill process tree immediately
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+            else:
+                proc.kill()
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
 
-    # Transition worker status to STOPPING
-    worker.status = "STOPPING"
+    # 2. Clean up any temporary Redis stop flag
+    try:
+        redis_client.delete(f"worker_stop:{worker_id}")
+    except Exception:
+        pass
+
+    # 3. Transition worker status to STOPPED immediately in PostgreSQL
+    now = time.time()
+    worker.status = "STOPPED"
+    worker.stopped_at = now
+    worker.last_heartbeat = now
+    # Note: We deliberately do NOT mark active jobs as completed or remove them from processing_queue!
+    # The active task stays in PROCESSING status with its unrenewed lease_until intact.
+    # Heartbeats halt immediately. Once lease_until expires, the Reaper will automatically
+    # recover the orphaned task and push it back to the READY queue.
     record_worker_event(
         db,
         worker_id,
-        "WORKER_STOPPING",
-        f"Graceful stop signal requested for worker {worker_id}"
+        "WORKER_STOPPED",
+        f"Worker {worker_id} shut down immediately (in-flight tasks orphaned for reaper recovery upon lease expiry)"
     )
     db.commit()
 
     return WorkerStopResponse(
         worker_id=worker_id,
-        status="STOPPING",
-        message=f"Stop signal sent to worker {worker_id}. It will shut down gracefully."
+        status="STOPPED",
+        message=f"Worker {worker_id} shut down immediately. In-flight tasks will be recovered by reaper upon lease expiry."
     )
 
 
@@ -552,7 +586,7 @@ def get_workers(
             w_item = workers_dict[job.worker_id]
             w_item.current_job_id = job.id
             w_item.job_id = job.id
-            if w_item.status not in ("STOPPING", "OFFLINE"):
+            if w_item.status not in ("STOPPING", "OFFLINE", "STOPPED"):
                 w_item.status = "PROCESSING"
         else:
             # Active job whose worker isn't in registry (e.g. simulated or test worker)

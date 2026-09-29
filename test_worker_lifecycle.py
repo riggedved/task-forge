@@ -161,11 +161,11 @@ def test_worker_lifecycle():
     # -------------------------------------------------------------------------
     # TEST 4: Stop Idle Worker (IDLE -> STOPPING -> STOPPED)
     # -------------------------------------------------------------------------
-    print("\n=== Test 4: Stop Idle Worker ===")
+    print("\n=== Test 4: Stop Idle Worker (Immediate Shutdown) ===")
     stop_res = client.post(f"/workers/{worker_2_id}/stop")
     assert stop_res.status_code == 200
-    assert stop_res.json()["status"] == "STOPPING"
-    print(f"[OK] Stop request returned STOPPING for {worker_2_id}")
+    assert stop_res.json()["status"] == "STOPPED"
+    print(f"[OK] Stop request returned immediate STOPPED for {worker_2_id}")
 
     # Wait for worker process to cleanly terminate and record STOPPED in DB
     worker_stopped = False
@@ -194,19 +194,19 @@ def test_worker_lifecycle():
     print(f"[OK] Worker {worker_2_id} visible with ?include_stopped=true")
 
     # -------------------------------------------------------------------------
-    # TEST 5: Stop Processing Worker (Graceful Shutdown)
+    # TEST 5: Stop Processing Worker (Immediate Shutdown & Reaper Recovery)
     # -------------------------------------------------------------------------
-    print("\n=== Test 5: Stop Worker During Job Processing (Graceful Shutdown) ===")
-    # Create a job that takes 3 seconds
+    print("\n=== Test 5: Stop Worker During Job Processing (Immediate Shutdown & Reaper Recovery) ===")
+    # Create a job that takes 10 seconds
     create_res = client.post("/create-job", json={
         "type": "long_task",
-        "payload": {"duration": 3},
+        "payload": {"duration": 10},
         "priority": 10
     })
     assert create_res.status_code == 201
     job_5_id = create_res.json()["id"]
 
-    # Wait until worker_1 is PROCESSING
+    # Wait until worker_1 is actively PROCESSING
     is_processing = False
     for _ in range(25):
         time.sleep(0.2)
@@ -218,29 +218,66 @@ def test_worker_lifecycle():
     assert is_processing, f"Worker {worker_1_id} should be PROCESSING job {job_5_id}"
     print(f"[OK] Worker {worker_1_id} is actively PROCESSING job {job_5_id}")
 
-    # Send stop signal while it is processing
+    # Send stop request: MUST be immediate shutdown, not graceful
     stop_res = client.post(f"/workers/{worker_1_id}/stop")
     assert stop_res.status_code == 200
-    assert stop_res.json()["status"] == "STOPPING"
-    print(f"[OK] Stop signal sent to worker {worker_1_id} while processing")
+    assert stop_res.json()["status"] == "STOPPED", f"Expected immediate STOPPED, got {stop_res.json()['status']}"
+    print(f"[OK] Worker {worker_1_id} terminated immediately with status STOPPED")
 
-    # Wait for the job to complete AND worker to stop
-    stopped_cleanly = False
-    for _ in range(35):
-        time.sleep(0.2)
-        res_worker = client.get(f"/workers/{worker_1_id}")
-        if res_worker.status_code == 200 and res_worker.json()["status"] == "STOPPED":
-            stopped_cleanly = True
-            break
+    # Verify worker record in DB is STOPPED immediately
+    res_worker = client.get(f"/workers/{worker_1_id}")
+    assert res_worker.status_code == 200 and res_worker.json()["status"] == "STOPPED"
 
-    assert stopped_cleanly, f"Worker {worker_1_id} did not transition to STOPPED after job execution"
-    print(f"[OK] Worker {worker_1_id} stopped cleanly after finishing work")
-
-    # Check job state in DB: it MUST be COMPLETED, not corrupted or abandoned
+    # Verify job state in DB: it MUST NOT be COMPLETED! It remains PROCESSING with lease intact
     job_res = client.get(f"/jobs/{job_5_id}")
     assert job_res.status_code == 200
-    assert job_res.json()["status"] == "COMPLETED"
-    print(f"[OK] Job {job_5_id} finished successfully with status COMPLETED (no state corruption)")
+    assert job_res.json()["status"] == "PROCESSING", f"Job should remain PROCESSING, got {job_res.json()['status']}"
+    print(f"[OK] In-flight job {job_5_id} remained in PROCESSING (lease orphaned, heartbeats stopped)")
+
+    # Simulate lease expiry: advance lease score in Redis and DB to past
+    db = SessionLocal()
+    j_rec = db.query(Job).filter(Job.id == job_5_id).first()
+    past_time = time.time() - 5
+    j_rec.lease_until = past_time
+    db.commit()
+    db.close()
+    redis_client.zadd(PROCESSING_QUEUE, {f"{job_5_id}:-10.0": past_time})
+
+    # Trigger reaper recovery
+    recover_expired_jobs()
+
+    # Verify job is now recovered to PENDING and back in READY_QUEUE
+    job_recovered_res = client.get(f"/jobs/{job_5_id}")
+    assert job_recovered_res.status_code == 200
+    assert job_recovered_res.json()["status"] == "PENDING"
+    assert job_recovered_res.json()["worker_id"] is None
+    assert job_recovered_res.json()["lease_until"] is None
+    assert redis_client.zscore(READY_QUEUE, str(job_5_id)) == -10.0
+    print(f"[OK] Reaper successfully recovered job {job_5_id} back to PENDING and READY_QUEUE")
+
+    # Verify JOB_RECOVERED event was logged
+    event_res = client.get("/activity")
+    assert event_res.status_code == 200
+    events = event_res.json()["events"]
+    assert any(e["job_id"] == job_5_id and e["event_type"] == "JOB_RECOVERED" for e in events)
+    print(f"[OK] JOB_RECOVERED event confirmed in activity logs")
+
+    # Now start a new worker to verify the recovered job is picked up and completed
+    res_w3 = client.post("/workers")
+    assert res_w3.status_code == 201
+    worker_3_id = res_w3.json()["worker_id"]
+    print(f"[OK] Started new worker {worker_3_id} to process recovered job")
+
+    # Wait for the recovered job to complete via the new worker
+    re_completed = False
+    for _ in range(60):
+        time.sleep(0.3)
+        res_check = client.get(f"/jobs/{job_5_id}")
+        if res_check.status_code == 200 and res_check.json()["status"] == "COMPLETED":
+            re_completed = True
+            break
+    assert re_completed, f"Recovered job {job_5_id} was not processed to completion by new worker"
+    print(f"[OK] Recovered job {job_5_id} successfully COMPLETED by worker {worker_3_id}!")
 
     # -------------------------------------------------------------------------
     # TEST 6: Dead Worker Detection (Heartbeat Timeout -> OFFLINE)
