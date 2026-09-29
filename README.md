@@ -17,47 +17,6 @@ Built from first principles around core distributed systems primitives, Task For
 
 ---
 
-## 📑 Table of Contents
-
-- [System Overview & Guarantees](#-system-overview--guarantees)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-  - [Architectural Block Diagram](#architectural-block-diagram)
-  - [End-to-End Lifecycle Flow](#end-to-end-lifecycle-flow)
-- [Under the Hood: Deep Dive](#-under-the-hood-deep-dive)
-  - [1. Redis Queue Topology & Data Structures](#1-redis-queue-topology--data-structures)
-  - [2. Atomic Job Claiming via Lua](#2-atomic-job-claiming-via-lua)
-  - [3. Scheduled & Delayed Execution Engine](#3-scheduled--delayed-execution-engine)
-  - [4. Distributed Leases & Asynchronous Heartbeats](#4-distributed-leases--asynchronous-heartbeats)
-  - [5. Zombie Worker Recovery Daemon (The Reaper)](#5-zombie-worker-recovery-daemon-the-reaper)
-  - [6. Exponential Backoff Retries & Dead-Letter Queue (DLQ)](#6-exponential-backoff-retries--dead-letter-queue-dlq)
-  - [7. Idempotent Ingestion & Conflict Resolution](#7-idempotent-ingestion--conflict-resolution)
-- [Tech Stack](#-tech-stack)
-- [Database Schema & State Machine](#-database-schema--state-machine)
-- [API Reference](#-api-reference)
-  - [Endpoints Summary](#endpoints-summary)
-  - [1. Root Health Check](#1-root-health-check)
-  - [2. Create / Submit Job](#2-create--submit-job)
-  - [3. List All Jobs](#3-list-all-jobs)
-  - [4. Get Job Details & Lease Status](#4-get-job-details--lease-status)
-- [Project Structure](#-project-structure)
-- [Local Development & Setup](#-local-development--setup)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Starting the Services](#starting-the-services)
-- [End-to-End Simulation & Verification Guide](#-end-to-end-simulation--verification-guide)
-  - [Scenario A: Priority Inversion & Ordering](#scenario-a-priority-inversion--ordering)
-  - [Scenario B: Scheduled & Delayed Execution](#scenario-b-scheduled--delayed-execution)
-  - [Scenario C: Simulated Failure, Exponential Backoff & DLQ](#scenario-c-simulated-failure-exponential-backoff--dlq)
-  - [Scenario D: Worker Crash & Reaper Self-Healing](#scenario-d-worker-crash--reaper-self-healing)
-  - [Scenario E: Idempotency Key Deduplication](#scenario-e-idempotency-key-deduplication)
-- [Configuration Reference](#-configuration-reference)
-- [Production Roadmap & Scalability](#-production-roadmap--scalability)
-- [Author & License](#-author--license)
-
----
-
 ## 🛡 System Overview & Guarantees
 
 | Metric / Dimension | Guarantee / Specification | Implementation Details |
@@ -68,7 +27,7 @@ Built from first principles around core distributed systems primitives, Task For
 | **Delayed Execution** | **Sub-second precision** | Worker sweeps `delayed_queue` via Lua `ZRANGEBYSCORE` comparing against current epoch. |
 | **Fault Recovery** | **Time-Bounded Leases (60s)** | Leases auto-expire if heartbeats halt; standalone **Reaper** requeues orphaned tasks. |
 | **Heartbeat Thread** | **Background Async Daemon (20s)** | Dedicated Python thread extends Redis & PostgreSQL lease without blocking task execution. |
-| **Retry Strategy** | **Exponential Backoff** | $T_{\text{wait}} = 5\text{s} \times 2^{(\text{retry}-1)}$; up to 3 retries before DLQ routing. |
+| **Retry Strategy** | **Exponential Backoff** | $\text{Delay} = 5\text{s} \times 2^{(\text{retry}-1)}$; up to 3 retries before DLQ routing. |
 | **Dead-Letter Queue** | **Quarantine Isolation** | Permanently failing jobs are placed in `failed_queue` and flagged `FAILED` in PostgreSQL. |
 | **Ingestion Deduplication** | **Strict Idempotency** | PostgreSQL unique constraint on `idempotency_key` with automatic conflict rollback. |
 | **Persistence Model** | **Hybrid In-Memory + Relational** | Fast scheduling via Redis in-memory ZSETs; audit & state ledger in PostgreSQL. |
@@ -210,8 +169,8 @@ sequenceDiagram
 
     Note over Client,API: 1. Ingestion Phase
     Client->>API: POST /create-job (payload, priority, delay_seconds, idempotency_key)
-    API->>DB: Check idempotency_key & insert Job (status: PENDING)
-    alt Immediate Job (delay_seconds == 0)
+    API->>DB: Check idempotency_key and insert Job (status: PENDING)
+    alt Immediate Job (delay_seconds is 0)
         API->>Redis: ZADD job_queue (-priority, job_id)
     else Delayed Job (delay_seconds > 0)
         API->>Redis: ZADD delayed_queue (execute_at, job_id:priority)
@@ -219,8 +178,8 @@ sequenceDiagram
     API-->>Client: 200 OK (job_id, status: PENDING)
 
     Note over Redis,Worker: 2. Scheduling & Claiming Phase
-    Worker->>Redis: Run MOVE_DELAYED_JOBS_SCRIPT (migrate due jobs -> job_queue)
-    Worker->>Redis: Run CLAIM_JOB_SCRIPT (Atomic ZPOPMIN job_queue -> ZADD processing_queue)
+    Worker->>Redis: Run MOVE_DELAYED_JOBS_SCRIPT (migrate due jobs to job_queue)
+    Worker->>Redis: Run CLAIM_JOB_SCRIPT (Atomic ZPOPMIN job_queue to processing_queue)
     Redis-->>Worker: job_id returned
     Worker->>DB: UPDATE jobs SET status='PROCESSING', worker_id=UUID, lease_until=now()+60
 
@@ -236,19 +195,19 @@ sequenceDiagram
     alt Task Succeeded
         Worker->>Redis: ZREM processing_queue member
         Worker->>DB: UPDATE jobs SET status='COMPLETED', completed_at=now()
-    else Task Failed (retry_count < 3)
+    else Task Failed (retry_count under 3)
         Worker->>Redis: ZREM processing_queue member
-        Worker->>DB: UPDATE jobs SET status='PENDING', retry_count += 1
+        Worker->>DB: UPDATE jobs SET status='PENDING', retry_count = retry_count + 1
         Worker->>Redis: ZADD delayed_queue (now() + backoff, job_id:priority)
-    else Retries Exhausted (retry_count >= 3)
+    else Retries Exhausted (retry_count reaches max)
         Worker->>Redis: ZREM processing_queue member
         Worker->>Redis: ZADD failed_queue (now(), job_id)
         Worker->>DB: UPDATE jobs SET status='FAILED', completed_at=now()
     end
 
     Note over Redis,Reaper: 5. Crash Recovery (Alternative Branch)
-    critical Worker Dies / Crashes
-        Worker--xHeartbeat: Worker terminates; heartbeat stops
+    opt Worker Crashes Mid-Task
+        Worker->>Heartbeat: Worker terminates and heartbeat ceases
         Reaper->>Redis: ZRANGEBYSCORE processing_queue -inf now()
         Reaper->>Redis: ZREM processing_queue expired_member
         Reaper->>DB: UPDATE jobs SET status='PENDING', worker_id=NULL, lease_until=NULL
@@ -350,7 +309,7 @@ If a worker node crashes (OOM killer, network partition, process abort):
 
 When an unhandled exception occurs in worker logic, the system calculates a deterministic exponential backoff:
 
-$$\text{Retry Delay} = \text{RETRY\_BACKOFF\_BASE} \times 2^{(\text{retry\_count} - 1)}$$
+$$\text{Retry Delay} = \text{Base Delay} \times 2^{(\text{retry} - 1)}$$
 
 With default settings (`RETRY_BACKOFF_BASE = 5`, `MAX_RETRIES = 3`):
 
