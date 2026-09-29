@@ -36,7 +36,8 @@ from app.schemas import (
     ThroughputResponse,
     LatencyResponse,
     QueueWaitMetrics,
-    HealthResponse
+    HealthResponse,
+    HardResetResponse
 )
 
 # Ensure database tables exist
@@ -813,4 +814,114 @@ def get_latency(
             min_seconds=min_wait,
             max_seconds=max_wait
         )
+    )
+
+
+# ---------------------------------------------------------
+# Admin & Development Maintenance
+# ---------------------------------------------------------
+
+@app.post("/admin/hard-reset", response_model=HardResetResponse)
+def hard_reset(db: Session = Depends(get_db)):
+    """
+    Completely reset Task Forge runtime state without destroying schema:
+    1. Gracefully stop all Task Forge-managed worker processes.
+    2. Wait for worker processes to terminate safely (with fallback terminate/kill).
+    3. Clear Redis Task Forge queues (job_queue, processing_queue, delayed_queue, failed_queue) and stop keys.
+    4. Delete PostgreSQL application data in proper dependency order (job_events, jobs, worker_events, workers).
+    5. Verify Redis queues and database tables are empty.
+    6. Return reset summary.
+    """
+    # 1. Stop all Task Forge-managed workers
+    workers_stopped_count = 0
+    active_procs: list[tuple[str, subprocess.Popen]] = []
+
+    for wid, proc in list(_managed_workers.items()):
+        if proc.poll() is None:
+            active_procs.append((wid, proc))
+            # Signal graceful shutdown via Redis key
+            try:
+                redis_client.set(f"worker_stop:{wid}", "1", ex=60)
+            except Exception as e:
+                print(f"[HardReset] Warning: failed to set stop key for worker {wid}: {e}")
+
+    # 2. Wait up to 5 seconds for worker processes to terminate gracefully
+    deadline = time.time() + 5.0
+    while active_procs and time.time() < deadline:
+        active_procs = [(wid, proc) for wid, proc in active_procs if proc.poll() is None]
+        if active_procs:
+            time.sleep(0.2)
+
+    # If any process hasn't exited, terminate it
+    for wid, proc in active_procs:
+        if proc.poll() is None:
+            try:
+                proc.terminate()
+                proc.wait(timeout=1.0)
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+
+    workers_stopped_count = len(_managed_workers)
+    _managed_workers.clear()
+
+    # 3. Targeted deletion of Redis Task Forge queues & stop keys
+    task_forge_queues = [READY_QUEUE, PROCESSING_QUEUE, DELAYED_QUEUE, FAILED_QUEUE]
+    try:
+        redis_client.delete(*task_forge_queues)
+        # Also clean up any worker_stop keys
+        stop_keys = redis_client.keys("worker_stop:*")
+        if stop_keys:
+            redis_client.delete(*stop_keys)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to clear Redis queues: {str(e)}"
+        )
+
+    # 4. Clear PostgreSQL application data in safe order
+    try:
+        job_events_deleted = db.query(JobEvent).delete()
+        jobs_deleted = db.query(Job).delete()
+        worker_events_deleted = db.query(WorkerEvent).delete()
+        workers_deleted = db.query(Worker).delete()
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to clear PostgreSQL application data: {str(e)}"
+        )
+
+    # 5. Verification: verify Redis queues and PostgreSQL tables are actually 0
+    try:
+        for q in task_forge_queues:
+            count = redis_client.zcard(q)
+            if count != 0:
+                raise RuntimeError(f"Queue {q} was not emptied (count={count})")
+
+        if db.query(Job).count() != 0:
+            raise RuntimeError("Jobs table was not emptied")
+        if db.query(JobEvent).count() != 0:
+            raise RuntimeError("JobEvents table was not emptied")
+        if db.query(Worker).count() != 0:
+            raise RuntimeError("Workers table was not emptied")
+        if db.query(WorkerEvent).count() != 0:
+            raise RuntimeError("WorkerEvents table was not emptied")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Post-reset verification failed: {str(e)}"
+        )
+
+    return HardResetResponse(
+        status="reset",
+        message="Task Forge runtime state has been completely reset",
+        workers_stopped=workers_stopped_count,
+        jobs_deleted=jobs_deleted,
+        job_events_deleted=job_events_deleted,
+        worker_events_deleted=worker_events_deleted,
+        redis_queues_cleared=task_forge_queues
     )

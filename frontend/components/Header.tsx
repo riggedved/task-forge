@@ -7,9 +7,10 @@ interface HeaderProps {
   health?: Health | null;
   redisMetrics?: RedisMetrics | null;
   workers?: WorkersResponse | null;
+  onHardReset?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ health, redisMetrics, workers }) => {
+export const Header: React.FC<HeaderProps> = ({ health, redisMetrics, workers, onHardReset }) => {
   const isHealthy = health?.status === 'ok';
   const activeWorkerCount =
     workers?.workers.filter((w) => w.status !== 'STOPPED' && w.status !== 'OFFLINE').length || 0;
@@ -59,6 +60,20 @@ export const Header: React.FC<HeaderProps> = ({ health, redisMetrics, workers })
               </>
             )}
           </div>
+
+          {/* Hard Reset button located next to SYSTEM ONLINE indicator */}
+          {onHardReset && (
+            <button
+              type="button"
+              onClick={onHardReset}
+              className="px-space-xs py-1 rounded bg-error-container/20 hover:bg-error-container/40 text-error border border-error/30 font-mono-sm text-[11px] font-semibold transition-all flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm"
+              title="Wipe Task Forge runtime state (Admin Hard Reset)"
+              id="btn-header-hard-reset"
+            >
+              <span className="material-symbols-outlined text-[15px] text-error">warning</span>
+              <span>Hard Reset</span>
+            </button>
+          )}
 
           {/* Quick cluster telemetry */}
           <div className="hidden 2xl:flex items-center gap-space-md font-mono-sm text-mono-sm text-on-surface-variant px-space-sm py-space-xs rounded bg-surface-container-low">

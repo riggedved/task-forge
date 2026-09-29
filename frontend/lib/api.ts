@@ -13,7 +13,8 @@ import {
   JobLogsResponse,
   Throughput,
   Latency,
-  Health
+  Health,
+  HardResetResponse
 } from '../types';
 
 export const API_BASE_URL =
@@ -118,4 +119,8 @@ export const api = {
   getJobLogs: (jobId: number) => request<JobLogsResponse>(`/jobs/${jobId}/logs`),
   getThroughput: (window = 60) => request<Throughput>(`/throughput?window=${window}`),
   getLatency: (window = 300) => request<Latency>(`/latency?window=${window}`),
+  adminHardReset: () =>
+    request<HardResetResponse>('/admin/hard-reset', {
+      method: 'POST',
+    }),
 };

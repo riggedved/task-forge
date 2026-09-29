@@ -150,3 +150,13 @@ export interface Health {
   database: string;
   redis: string;
 }
+
+export interface HardResetResponse {
+  status: string;
+  message: string;
+  workers_stopped: number;
+  jobs_deleted: number;
+  job_events_deleted: number;
+  worker_events_deleted: number;
+  redis_queues_cleared: string[];
+}

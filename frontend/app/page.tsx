@@ -24,6 +24,7 @@ import { WorkersSection } from '../components/WorkersSection';
 import { RecentActivityFeed } from '../components/RecentActivityFeed';
 import { RecentJobsTable } from '../components/RecentJobsTable';
 import { PayloadInspectModal } from '../components/PayloadInspectModal';
+import { HardResetModal } from '../components/HardResetModal';
 
 export default function PlaygroundPage() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -43,6 +44,8 @@ export default function PlaygroundPage() {
   const [activeSection, setActiveSection] = useState<string>('overview');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [isHardResetModalOpen, setIsHardResetModalOpen] = useState<boolean>(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
 
   const selectedJobIdRef = useRef<number | null>(null);
   selectedJobIdRef.current = selectedJob ? selectedJob.id : null;
@@ -180,10 +183,28 @@ export default function PlaygroundPage() {
     }
   };
 
+  // Handle successful Hard Reset
+  const handleHardResetSuccess = async () => {
+    setSelectedJob(null);
+    selectedJobIdRef.current = null;
+    setInspectingJob(null);
+    setJobs([]);
+    setActivity([]);
+    setWorkerEvents([]);
+    await fetchTelemetry();
+    setResetSuccessMessage('Task Forge reset successfully.');
+    setTimeout(() => setResetSuccessMessage(null), 4000);
+  };
+
   return (
     <div className="bg-background min-h-screen text-on-surface">
       {/* Top Header */}
-      <Header health={health} redisMetrics={redisMetrics} workers={workers} />
+      <Header
+        health={health}
+        redisMetrics={redisMetrics}
+        workers={workers}
+        onHardReset={() => setIsHardResetModalOpen(true)}
+      />
 
       {/* Left Sidebar */}
       <Sidebar
@@ -196,6 +217,23 @@ export default function PlaygroundPage() {
       <div className="pl-60">
         <main className="w-full pt-14 bg-background min-h-screen px-margin py-space-lg">
           <div className="flex flex-col w-full gap-space-lg max-w-7xl mx-auto">
+            {/* Reset Success Notification Banner */}
+            {resetSuccessMessage && (
+              <div className="p-space-sm rounded-xl bg-primary/10 border border-primary/30 text-primary font-mono-sm text-mono-sm flex items-center justify-between shadow-md animate-in fade-in">
+                <div className="flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  <span>{resetSuccessMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setResetSuccessMessage(null)}
+                  className="text-primary/70 hover:text-primary cursor-pointer text-[14px]"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* Backend Offline Banner */}
             {backendError && (
               <div className="p-space-sm rounded-xl bg-error-container text-on-error-container font-mono-sm text-mono-sm flex items-center justify-between border border-error/30 shadow-md">
@@ -286,6 +324,13 @@ export default function PlaygroundPage() {
           onClose={() => setInspectingJob(null)}
         />
       )}
+
+      {/* Hard Reset Confirmation Modal */}
+      <HardResetModal
+        isOpen={isHardResetModalOpen}
+        onClose={() => setIsHardResetModalOpen(false)}
+        onSuccess={handleHardResetSuccess}
+      />
     </div>
   );
 }

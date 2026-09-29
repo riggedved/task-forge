@@ -164,3 +164,14 @@ class HealthResponse(BaseModel):
     status: str
     database: str
     redis: str
+
+
+class HardResetResponse(BaseModel):
+    status: str
+    message: str
+    workers_stopped: int
+    jobs_deleted: int
+    job_events_deleted: int
+    worker_events_deleted: int
+    redis_queues_cleared: list[str]
+
