@@ -43,7 +43,10 @@ from app.schemas import (
 )
 
 # Ensure database tables exist
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Warning: Could not connect to database on startup ({e}). Check your DATABASE_URL in .env.")
 
 app = FastAPI(
     title="Task Forge API",

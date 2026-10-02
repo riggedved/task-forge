@@ -227,8 +227,8 @@ task-forge/
 ### Prerequisites
 1. **Python 3.10+** (Python 3.12 recommended)
 2. **Node.js 18+** (for frontend playground)
-3. **PostgreSQL** running on port `5432` with database `job_queue`
-4. **Redis** running on port `6379`
+3. **Supabase PostgreSQL** project (or local PostgreSQL)
+4. **Redis** running on port `6379` (or cloud Redis)
 
 ---
 
@@ -256,14 +256,15 @@ task-forge/
    pip install -r requirements.txt
    ```
 
-4. **Configure Database & Redis**:
-   Verify connection settings in `app/database.py` and `app/redis_client.py`:
-   ```python
-   # app/database.py
-   DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/job_queue"
-
-   # app/redis_client.py
-   redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+4. **Configure Environment Variables (`.env`)**:
+   Copy `.env.example` to `.env` (or update `.env`) and add your Supabase connection string:
+   ```env
+   # .env
+   DATABASE_URL=postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
+   SUPABASE_URL=https://[PROJECT_REF].supabase.co
+   SUPABASE_ANON_KEY=your-anon-key
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
    ```
 
 5. **Start the FastAPI Backend**:
@@ -464,9 +465,14 @@ cd frontend && npx tsc --noEmit
 
 | Parameter | Location | Default Value | Description |
 | :--- | :--- | :---: | :--- |
-| `DATABASE_URL` | `app/database.py` | `postgresql://...` | Connection URI for the primary PostgreSQL instance. |
-| `REDIS_HOST` | `app/redis_client.py` | `localhost` | Hostname for the Redis server. |
-| `REDIS_PORT` | `app/redis_client.py` | `6379` | Port for the Redis server. |
+| `DATABASE_URL` | `.env` / `app/database.py` | `postgresql://...` | Connection URI for Supabase PostgreSQL (direct or pooler). |
+| `SUPABASE_URL` | `.env` / `app/supabase_client.py` | `https://[ID].supabase.co` | Supabase project API endpoint URL. |
+| `SUPABASE_ANON_KEY` | `.env` / `app/supabase_client.py` | `eyJ...` | Supabase anonymous / public API key. |
+| `SUPABASE_SERVICE_ROLE_KEY` | `.env` / `app/supabase_client.py` | `eyJ...` | Supabase service-role secret key (elevated permissions). |
+| `DB_SSL_MODE` | `.env` / `app/database.py` | `require` | SSL mode for PostgreSQL database connection. |
+| `REDIS_HOST` | `.env` / `app/redis_client.py` | `localhost` | Hostname for the Redis server. |
+| `REDIS_PORT` | `.env` / `app/redis_client.py` | `6379` | Port for the Redis server. |
+| `REDIS_URL` | `.env` / `app/redis_client.py` | None | Full connection URI for Redis (e.g. Upstash). |
 | `LEASE_DURATION` | `app/worker.py` | `60` | Lease duration in seconds before an in-flight task is considered orphaned. |
 | `HEARTBEAT_INTERVAL` | `app/worker.py` | `20` | Interval in seconds between heartbeat lease renewals by an active worker. |
 | `WORKER_HEARTBEAT_TIMEOUT` | `app/main.py` | `30.0` | Timeout in seconds after which a silent worker is flagged `OFFLINE`. |
