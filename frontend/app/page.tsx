@@ -13,7 +13,7 @@ import {
   Latency,
   Health,
 } from '../types';
-import { api } from '../lib/api';
+import { api, API_BASE_URL } from '../lib/api';
 import { Header } from '../components/Header';
 import { SystemSummaryBar } from '../components/SystemSummaryBar';
 import { CreateJobPanel } from '../components/CreateJobPanel';
@@ -181,9 +181,12 @@ export default function PlaygroundPage() {
     setJobs([]);
     setActivity([]);
     setWorkerEvents([]);
-    await fetchTelemetry();
+    setStats({ total: 0, pending: 0, processing: 0, completed: 0, failed: 0 });
+    setQueueDepth({ ready: 0, processing: 0, delayed: 0, failed: 0, total: 0 });
+    setWorkers({ workers: [] });
     setResetSuccessMessage('Task Forge reset successfully.');
     setTimeout(() => setResetSuccessMessage(null), 4000);
+    await fetchTelemetry();
   };
 
   return (
@@ -221,7 +224,7 @@ export default function PlaygroundPage() {
               <div className="p-space-sm rounded-xl bg-error-container text-on-error-container font-mono-sm text-mono-sm flex items-center justify-between border border-error/30 shadow-md">
                 <div className="flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-[18px]">error</span>
-                  <span>Backend unavailable: {backendError}. Ensure FastAPI is running at http://127.0.0.1:8000.</span>
+                  <span>Backend unavailable: {backendError}. Ensure FastAPI is running at {API_BASE_URL}.</span>
                 </div>
                 <button
                   type="button"

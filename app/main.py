@@ -863,68 +863,74 @@ def get_latency(
 def hard_reset(db: Session = Depends(get_db)):
     """
     Completely reset Task Forge runtime state without destroying schema:
-    1. Gracefully stop all Task Forge-managed worker processes.
-    2. Wait for worker processes to terminate safely (with fallback terminate/kill).
-    3. Clear Redis Task Forge queues (job_queue, processing_queue, delayed_queue, failed_queue) and stop keys.
-    4. Delete PostgreSQL application data in proper dependency order (job_events, jobs, worker_events, workers).
-    5. Verify Redis queues and database tables are empty.
-    6. Return reset summary.
+    1. Instantly terminate all Task Forge-managed worker processes.
+    2. Clear Redis Task Forge queues (job_queue, processing_queue, delayed_queue, failed_queue) and stop keys via pipeline.
+    3. Delete PostgreSQL application data using high-speed atomic TRUNCATE with RESTART IDENTITY.
+    4. Verify Redis queues and database tables are empty in minimal roundtrips.
+    5. Return reset summary.
     """
-    # 1. Stop all Task Forge-managed workers
-    workers_stopped_count = 0
-    active_procs: list[tuple[str, subprocess.Popen]] = []
+    # 1. Stop all Task Forge-managed workers immediately
+    workers_stopped_count = len(_managed_workers)
+    active_procs = list(_managed_workers.values())
 
-    for wid, proc in list(_managed_workers.items()):
-        if proc.poll() is None:
-            active_procs.append((wid, proc))
-            # Signal graceful shutdown via Redis key
-            try:
-                redis_client.set(f"worker_stop:{wid}", "1", ex=60)
-            except Exception as e:
-                print(f"[HardReset] Warning: failed to set stop key for worker {wid}: {e}")
-
-    # 2. Wait up to 5 seconds for worker processes to terminate gracefully
-    deadline = time.time() + 5.0
-    while active_procs and time.time() < deadline:
-        active_procs = [(wid, proc) for wid, proc in active_procs if proc.poll() is None]
-        if active_procs:
-            time.sleep(0.2)
-
-    # If any process hasn't exited, terminate it
-    for wid, proc in active_procs:
+    for proc in active_procs:
         if proc.poll() is None:
             try:
                 proc.terminate()
-                proc.wait(timeout=1.0)
             except Exception:
-                try:
-                    proc.kill()
-                except Exception:
-                    pass
+                pass
 
-    workers_stopped_count = len(_managed_workers)
+    # Brief check (up to 0.3s) for processes to release handles
+    deadline = time.time() + 0.3
+    while any(p.poll() is None for p in active_procs) and time.time() < deadline:
+        time.sleep(0.05)
+
+    # Force kill any lingering processes
+    for proc in active_procs:
+        if proc.poll() is None:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
     _managed_workers.clear()
 
-    # 3. Targeted deletion of Redis Task Forge queues & stop keys
+    # 2. Targeted deletion of Redis Task Forge queues & stop keys
     task_forge_queues = [READY_QUEUE, PROCESSING_QUEUE, DELAYED_QUEUE, FAILED_QUEUE]
     try:
-        redis_client.delete(*task_forge_queues)
-        # Also clean up any worker_stop keys
         stop_keys = redis_client.keys("worker_stop:*")
-        if stop_keys:
-            redis_client.delete(*stop_keys)
+        to_delete = task_forge_queues + (stop_keys if stop_keys else [])
+        if to_delete:
+            redis_client.delete(*to_delete)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to clear Redis queues: {str(e)}"
         )
 
-    # 4. Clear PostgreSQL application data in safe order
+    # 3. Clear PostgreSQL application data in a high-speed atomic batch
     try:
-        job_events_deleted = db.query(JobEvent).delete()
-        jobs_deleted = db.query(Job).delete()
-        worker_events_deleted = db.query(WorkerEvent).delete()
-        workers_deleted = db.query(Worker).delete()
+        # Pre-fetch deleted row counts in a single network roundtrip for response model
+        counts = db.execute(text("""
+            SELECT 
+                (SELECT count(*) FROM jobs) AS jobs_deleted,
+                (SELECT count(*) FROM job_events) AS job_events_deleted,
+                (SELECT count(*) FROM worker_events) AS worker_events_deleted,
+                (SELECT count(*) FROM workers) AS workers_deleted;
+        """)).mappings().first()
+
+        jobs_deleted = counts["jobs_deleted"]
+        job_events_deleted = counts["job_events_deleted"]
+        worker_events_deleted = counts["worker_events_deleted"]
+
+        # Truncate tables with cascade and reset identities in one atomic operation
+        if engine.dialect.name == "postgresql":
+            db.execute(text("TRUNCATE TABLE job_events, jobs, worker_events, workers RESTART IDENTITY CASCADE;"))
+        else:
+            db.query(JobEvent).delete()
+            db.query(Job).delete()
+            db.query(WorkerEvent).delete()
+            db.query(Worker).delete()
         db.commit()
     except Exception as e:
         db.rollback()
@@ -933,21 +939,25 @@ def hard_reset(db: Session = Depends(get_db)):
             detail=f"Failed to clear PostgreSQL application data: {str(e)}"
         )
 
-    # 5. Verification: verify Redis queues and PostgreSQL tables are actually 0
+    # 4. Fast verification: verify Redis queues and PostgreSQL tables are actually 0
     try:
+        pipe = redis_client.pipeline()
         for q in task_forge_queues:
-            count = redis_client.zcard(q)
+            pipe.zcard(q)
+        q_counts = pipe.execute()
+        for q, count in zip(task_forge_queues, q_counts):
             if count != 0:
                 raise RuntimeError(f"Queue {q} was not emptied (count={count})")
 
-        if db.query(Job).count() != 0:
-            raise RuntimeError("Jobs table was not emptied")
-        if db.query(JobEvent).count() != 0:
-            raise RuntimeError("JobEvents table was not emptied")
-        if db.query(Worker).count() != 0:
-            raise RuntimeError("Workers table was not emptied")
-        if db.query(WorkerEvent).count() != 0:
-            raise RuntimeError("WorkerEvents table was not emptied")
+        remaining = db.execute(text("""
+            SELECT 
+                (SELECT count(*) FROM jobs) +
+                (SELECT count(*) FROM job_events) +
+                (SELECT count(*) FROM worker_events) +
+                (SELECT count(*) FROM workers) AS total_remaining;
+        """)).scalar()
+        if remaining != 0:
+            raise RuntimeError(f"PostgreSQL tables were not emptied (remaining={remaining})")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

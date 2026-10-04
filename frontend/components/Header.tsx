@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Health, RedisMetrics, WorkersResponse } from '../types';
+import { API_BASE_URL } from '../lib/api';
 
 interface HeaderProps {
   health?: Health | null;
@@ -105,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({ health, redisMetrics, workers, o
               className="p-space-xs rounded bg-surface-container hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors flex items-center justify-center cursor-pointer"
               title="Documentation"
               type="button"
-              onClick={() => window.open('http://127.0.0.1:8000/docs', '_blank')}
+              onClick={() => window.open(`${API_BASE_URL}/docs`, '_blank')}
             >
               <span className="material-symbols-outlined text-[20px]">menu_book</span>
             </button>
