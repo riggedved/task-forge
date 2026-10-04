@@ -15,7 +15,6 @@ import {
 } from '../types';
 import { api } from '../lib/api';
 import { Header } from '../components/Header';
-import { Sidebar } from '../components/Sidebar';
 import { SystemSummaryBar } from '../components/SystemSummaryBar';
 import { CreateJobPanel } from '../components/CreateJobPanel';
 import { LiveJobPanel } from '../components/LiveJobPanel';
@@ -41,7 +40,6 @@ export default function PlaygroundPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [inspectingJob, setInspectingJob] = useState<Job | null>(null);
   const [cloneJobData, setCloneJobData] = useState<Job | null>(null);
-  const [activeSection, setActiveSection] = useState<string>('overview');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isHardResetModalOpen, setIsHardResetModalOpen] = useState<boolean>(false);
@@ -68,7 +66,7 @@ export default function PlaygroundPage() {
         api.getHealth().catch(() => ({ status: 'error', database: 'disconnected', redis: 'disconnected' })),
         api.getStats().catch(() => null),
         api.getQueueDepth().catch(() => null),
-        api.getWorkers().catch(() => ({ workers: [] })),
+        api.getWorkers(true).catch(() => ({ workers: [] })),
         api.getActivity(50).catch(() => ({ events: [] })),
         api.getWorkerEvents(undefined, 30).catch(() => ({ events: [] })),
         api.getRedisMetrics().catch(() => null),
@@ -174,14 +172,6 @@ export default function PlaygroundPage() {
     }
   };
 
-  // Navigation handling
-  const handleNavigate = (sectionId: string) => {
-    setActiveSection(sectionId);
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   // Handle successful Hard Reset
   const handleHardResetSuccess = async () => {
@@ -206,17 +196,9 @@ export default function PlaygroundPage() {
         onHardReset={() => setIsHardResetModalOpen(true)}
       />
 
-      {/* Left Sidebar */}
-      <Sidebar
-        redisMetrics={redisMetrics}
-        activeSection={activeSection}
-        onNavigate={handleNavigate}
-      />
-
       {/* Main Content Pane */}
-      <div className="pl-60">
-        <main className="w-full pt-14 bg-background min-h-screen px-margin py-space-lg">
-          <div className="flex flex-col w-full gap-space-lg max-w-7xl mx-auto">
+      <main className="w-full pt-14 bg-background min-h-screen px-margin py-space-lg">
+        <div className="flex flex-col w-full gap-space-lg max-w-7xl mx-auto">
             {/* Reset Success Notification Banner */}
             {resetSuccessMessage && (
               <div className="p-space-sm rounded-xl bg-primary/10 border border-primary/30 text-primary font-mono-sm text-mono-sm flex items-center justify-between shadow-md animate-in fade-in">
@@ -315,7 +297,6 @@ export default function PlaygroundPage() {
             />
           </div>
         </main>
-      </div>
 
       {/* Payload Inspection Modal */}
       {inspectingJob && (

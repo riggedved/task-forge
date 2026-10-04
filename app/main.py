@@ -560,11 +560,8 @@ def get_workers(
     if stale_workers:
         db.commit()
 
-    # 2. Query registered workers
-    query = db.query(Worker)
-    if not include_stopped:
-        query = query.filter(Worker.status != "STOPPED")
-    registered_workers = query.order_by(Worker.started_at.asc()).all()
+    # 2. Query registered workers (query all to properly reconcile status before filtering)
+    registered_workers = db.query(Worker).order_by(Worker.started_at.asc()).all()
 
     workers_dict: dict[str, WorkerResponse] = {}
     for w in registered_workers:
@@ -592,7 +589,7 @@ def get_workers(
             if w_item.status not in ("STOPPING", "OFFLINE", "STOPPED"):
                 w_item.status = "PROCESSING"
         else:
-            # Active job whose worker isn't in registry (e.g. simulated or test worker)
+            # Active job whose worker isn't in registry at all (e.g. simulated or test worker)
             status_str = "RECOVERING" if (job.lease_until and job.lease_until < now) else "PROCESSING"
             workers_dict[job.worker_id] = WorkerResponse(
                 worker_id=job.worker_id,
@@ -604,7 +601,11 @@ def get_workers(
                 stopped_at=None
             )
 
-    return WorkersResponse(workers=list(workers_dict.values()))
+    result_workers = list(workers_dict.values())
+    if not include_stopped:
+        result_workers = [w for w in result_workers if w.status != "STOPPED"]
+
+    return WorkersResponse(workers=result_workers)
 
 
 @app.get("/workers/{worker_id}", response_model=WorkerResponse)

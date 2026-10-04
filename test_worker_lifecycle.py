@@ -151,10 +151,15 @@ def test_worker_lifecycle():
     assert job_completed, f"Job {job_id} did not complete"
     print(f"[OK] Job {job_id} successfully COMPLETED via queue architecture")
 
-    # Verify worker returned to IDLE
-    res = client.get(f"/workers/{active_worker}")
-    assert res.status_code == 200
-    assert res.json()["status"] == "IDLE"
+    # Verify worker returned to IDLE (allow a moment for cloud DB update)
+    worker_idle = False
+    for _ in range(25):
+        res = client.get(f"/workers/{active_worker}")
+        if res.status_code == 200 and res.json()["status"] == "IDLE":
+            worker_idle = True
+            break
+        time.sleep(0.2)
+    assert worker_idle, f"Worker {active_worker} did not return to IDLE, got: {res.json()}"
     assert res.json()["current_job_id"] is None
     print(f"[OK] Worker {active_worker} returned to IDLE state")
 

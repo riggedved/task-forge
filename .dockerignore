@@ -1,0 +1,49 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Logs
+worker_logs/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Tests
+test_*.py
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Frontend dependencies/build output
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+
+# Documentation / local files
+*.md
+
+# Docker files not needed inside the image
+docker-compose.yml
+.dockerignore
