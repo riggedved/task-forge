@@ -63,6 +63,9 @@ def update_worker_heartbeat():
     try:
         worker = db.query(Worker).filter(Worker.worker_id == WORKER_ID).first()
         if worker and worker.status != "STOPPED":
+            if worker.status == "OFFLINE":
+                worker.status = "PROCESSING" if worker.current_job_id else "IDLE"
+                record_worker_event(db, WORKER_ID, "WORKER_RECOVERED", f"Worker {WORKER_ID} recovered from transient OFFLINE state")
             worker.last_heartbeat = time.time()
             db.commit()
         else:
@@ -296,55 +299,51 @@ def remove_from_processing(job):
 def process_job(job_id):
 
     db = SessionLocal()
-
-    job = db.query(Job).filter(
-        Job.id == int(job_id)
-    ).first()
-
-    if not job:
-
-        print(f"Job {job_id} not found")
-
-        db.close()
-
-        return
-
-    # -----------------------------------------------------
-    # Mark job as processing in PostgreSQL
-    # -----------------------------------------------------
-
-    job.status = "PROCESSING"
-    job.worker_id = WORKER_ID
-    job.lease_until = time.time() + LEASE_DURATION
-    job.started_at = time.time()
-
-    record_job_event(
-        db,
-        job.id,
-        "JOB_PROCESSING",
-        f"Job {job.id} started processing by worker {WORKER_ID}"
-    )
-
-    db.commit()
-
-    # Update worker status to PROCESSING
-    set_worker_job(job.id)
-
-    # -----------------------------------------------------
-    # Start heartbeat
-    # -----------------------------------------------------
-
-    stop_event = threading.Event()
-
-    heartbeat_thread = threading.Thread(
-        target=heartbeat_loop,
-        args=(job_id, stop_event),
-        daemon=True
-    )
-
-    heartbeat_thread.start()
+    stop_event = None
 
     try:
+        job = db.query(Job).filter(
+            Job.id == int(job_id)
+        ).first()
+
+        if not job:
+            print(f"Job {job_id} not found")
+            return
+
+        # -----------------------------------------------------
+        # Mark job as processing in PostgreSQL
+        # -----------------------------------------------------
+
+        job.status = "PROCESSING"
+        job.worker_id = WORKER_ID
+        job.lease_until = time.time() + LEASE_DURATION
+        job.started_at = time.time()
+
+        record_job_event(
+            db,
+            job.id,
+            "JOB_PROCESSING",
+            f"Job {job.id} started processing by worker {WORKER_ID}"
+        )
+
+        db.commit()
+
+        # Update worker status to PROCESSING
+        set_worker_job(job.id)
+
+        # -----------------------------------------------------
+        # Start heartbeat
+        # -----------------------------------------------------
+
+        stop_event = threading.Event()
+
+        heartbeat_thread = threading.Thread(
+            target=heartbeat_loop,
+            args=(job_id, stop_event),
+            daemon=True
+        )
+
+        heartbeat_thread.start()
 
         print(f"Processing Job {job.id}")
         print(f"Type: {job.type}")
@@ -352,8 +351,8 @@ def process_job(job_id):
         print(f"Priority: {job.priority}")
         print(f"Worker: {WORKER_ID}")
 
-        # Simulate work (default 10s, configurable via payload)
-        work_duration = 10
+        # Simulate work (default 10s, configurable via payload or DEFAULT_WORK_DURATION)
+        work_duration = float(os.getenv("DEFAULT_WORK_DURATION", "10.0"))
         if isinstance(job.payload, dict):
             if "duration" in job.payload:
                 work_duration = float(job.payload["duration"])
@@ -389,82 +388,95 @@ def process_job(job_id):
 
     except Exception as e:
 
-        print(f"Job {job.id} failed: {e}")
+        print(f"Job {job_id} failed: {e}")
 
         # Remove from processing before retrying
-        remove_from_processing(job)
+        if 'job' in locals() and job:
+            remove_from_processing(job)
 
-        if job.retry_count < MAX_RETRIES:
+            if job.retry_count < MAX_RETRIES:
 
-            job.retry_count += 1
+                job.retry_count += 1
 
-            job.status = "PENDING"
-            job.worker_id = None
-            job.lease_until = None
+                job.status = "PENDING"
+                job.worker_id = None
+                job.lease_until = None
 
-            retry_delay = RETRY_BACKOFF_BASE * (
-                2 ** (job.retry_count - 1)
-            )
+                retry_delay = RETRY_BACKOFF_BASE * (
+                    2 ** (job.retry_count - 1)
+                )
 
-            retry_at = time.time() + retry_delay
+                retry_at = time.time() + retry_delay
 
-            redis_client.zadd(
-                DELAYED_QUEUE,
-                {
-                    f"{job.id}:{job.priority}": retry_at
-                }
-            )
+                redis_client.zadd(
+                    DELAYED_QUEUE,
+                    {
+                        f"{job.id}:{job.priority}": retry_at
+                    }
+                )
 
-            record_job_event(
-                db,
-                job.id,
-                "JOB_RETRY_SCHEDULED",
-                f"Job {job.id} retry {job.retry_count}/{MAX_RETRIES} scheduled in {retry_delay} seconds"
-            )
+                record_job_event(
+                    db,
+                    job.id,
+                    "JOB_RETRY_SCHEDULED",
+                    f"Job {job.id} retry {job.retry_count}/{MAX_RETRIES} scheduled in {retry_delay} seconds"
+                )
 
-            print(
-                f"Retrying Job {job.id} "
-                f"(retry {job.retry_count}/{MAX_RETRIES}) "
-                f"in {retry_delay} seconds"
-            )
+                print(
+                    f"Retrying Job {job.id} "
+                    f"(retry {job.retry_count}/{MAX_RETRIES}) "
+                    f"in {retry_delay} seconds"
+                )
 
+            else:
+
+                job.status = "FAILED"
+                job.worker_id = None
+                job.lease_until = None
+                job.completed_at = time.time()
+
+                redis_client.zadd(
+                    FAILED_QUEUE,
+                    {
+                        str(job.id): time.time()
+                    }
+                )
+
+                record_job_event(
+                    db,
+                    job.id,
+                    "JOB_FAILED",
+                    f"Job {job.id} permanently failed after {job.retry_count} retries"
+                )
+
+                print(
+                    f"Job {job.id} permanently failed "
+                    f"after {job.retry_count} retries"
+                )
+
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()
         else:
-
-            job.status = "FAILED"
-            job.worker_id = None
-            job.lease_until = None
-            job.completed_at = time.time()
-
-            redis_client.zadd(
-                FAILED_QUEUE,
-                {
-                    str(job.id): time.time()
-                }
-            )
-
-            record_job_event(
-                db,
-                job.id,
-                "JOB_FAILED",
-                f"Job {job.id} permanently failed after {job.retry_count} retries"
-            )
-
-            print(
-                f"Job {job.id} permanently failed "
-                f"after {job.retry_count} retries"
-            )
-
-        db.commit()
+            try:
+                db.rollback()
+            except Exception:
+                pass
 
     finally:
 
-        # Stop heartbeat thread
-        stop_event.set()
+        # Stop heartbeat thread if started
+        if stop_event:
+            stop_event.set()
 
         db.close()
 
         # Reset worker status back to IDLE
-        set_worker_job(None)
+        try:
+            set_worker_job(None)
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------
@@ -486,28 +498,29 @@ if __name__ == "__main__":
 
     try:
         while True:
-            # Check if stop signal has been issued for this worker
-            if should_stop():
-                print(f"Worker {WORKER_ID} received stop signal. Stopping.")
-                break
+            try:
+                # Check if stop signal has been issued for this worker
+                if should_stop():
+                    print(f"Worker {WORKER_ID} received stop signal. Stopping.")
+                    break
 
-            # Move scheduled jobs into ready queue
-            move_delayed_jobs()
+                # Move scheduled jobs into ready queue
+                move_delayed_jobs()
 
-            # Atomically claim a job
-            job_id = get_next_job()
+                # Atomically claim a job
+                job_id = get_next_job()
 
-            if job_id:
-
-                process_job(job_id)
-
-            else:
-
-                # Check for stop signal more frequently while idle
-                for _ in range(4):
-                    if should_stop():
-                        break
-                    time.sleep(0.5)
+                if job_id:
+                    process_job(job_id)
+                else:
+                    # Check for stop signal more frequently while idle
+                    for _ in range(4):
+                        if should_stop():
+                            break
+                        time.sleep(0.5)
+            except Exception as loop_err:
+                print(f"Worker {WORKER_ID} encountered unexpected loop error: {loop_err}")
+                time.sleep(2)
 
     except KeyboardInterrupt:
         print(f"\nWorker {WORKER_ID} received KeyboardInterrupt. Shutting down.")

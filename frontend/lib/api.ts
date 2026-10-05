@@ -83,6 +83,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  createJobsBatch: (jobs: JobCreateRequest[]) =>
+    request<Job[]>('/jobs/batch', {
+      method: 'POST',
+      body: JSON.stringify({ jobs }),
+    }),
   cancelJob: (jobId: number) =>
     request<Job>(`/jobs/${jobId}/cancel`, {
       method: 'POST',

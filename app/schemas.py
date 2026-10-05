@@ -10,6 +10,10 @@ class JobCreateRequest(BaseModel):
     idempotency_key: str | None = None
 
 
+class BatchJobCreateRequest(BaseModel):
+    jobs: list[JobCreateRequest]
+
+
 class JobCreateResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

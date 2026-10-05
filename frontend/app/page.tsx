@@ -163,8 +163,33 @@ export default function PlaygroundPage() {
     ];
 
     try {
-      await Promise.all(batch.map((b) => api.createJob(b)));
-      await fetchTelemetry();
+      let createdJobs: any[] = [];
+      try {
+        createdJobs = await api.createJobsBatch(batch);
+      } catch {
+        // Fallback for older backend versions
+        createdJobs = await Promise.all(batch.map((b) => api.createJob(b)));
+      }
+
+      // Instant UI update: display jobs in table and update queue depth / stats immediately
+      if (Array.isArray(createdJobs) && createdJobs.length > 0) {
+        setJobs((prev) => [
+          ...createdJobs,
+          ...prev.filter((j) => !createdJobs.some((cj) => cj.id === j.id))
+        ]);
+        setStats((prev) => prev ? {
+          ...prev,
+          total: prev.total + createdJobs.length,
+          pending: prev.pending + createdJobs.length,
+        } : prev);
+        setQueueDepth((prev) => prev ? {
+          ...prev,
+          ready: prev.ready + createdJobs.length,
+          total: prev.total + createdJobs.length,
+        } : prev);
+      }
+
+      fetchTelemetry();
     } catch {
       // ignore
     } finally {

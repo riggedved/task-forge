@@ -18,6 +18,7 @@ from app.events import record_job_event, record_worker_event
 from app.reaper import recover_expired_jobs
 from app.schemas import (
     JobCreateRequest,
+    BatchJobCreateRequest,
     JobCreateResponse,
     JobDetailResponse,
     StatsResponse,
@@ -70,7 +71,7 @@ FAILED_QUEUE = "failed_queue"
 
 # In-memory dictionary tracking managed subprocesses by worker_id
 _managed_workers: dict[str, subprocess.Popen] = {}
-WORKER_HEARTBEAT_TIMEOUT = 30.0  # seconds until worker without heartbeat considered OFFLINE
+WORKER_HEARTBEAT_TIMEOUT = 60.0  # seconds until worker without heartbeat considered OFFLINE (tolerant to burst load)
 
 
 # Background reaper thread: sweeps expired leases every 5s to self-heal orphaned tasks
@@ -206,6 +207,49 @@ def create_job(job: JobCreateRequest, db: Session = Depends(get_db)):
     )
 
     return new_job
+
+
+@app.post("/jobs/batch", response_model=list[JobDetailResponse], status_code=status.HTTP_201_CREATED)
+def create_jobs_batch(request: BatchJobCreateRequest, db: Session = Depends(get_db)):
+    """High-speed batch job creation in a single database transaction and Redis pipeline."""
+    now = time.time()
+    created_items = []
+
+    for item in request.jobs:
+        new_job = Job(
+            type=item.type,
+            payload=item.payload,
+            priority=item.priority,
+            idempotency_key=item.idempotency_key,
+            created_at=now
+        )
+        db.add(new_job)
+        created_items.append((new_job, item))
+
+    db.commit()
+
+    pipe = redis_client.pipeline()
+    for new_job, item in created_items:
+        db.refresh(new_job)
+        if item.delay_seconds > 0:
+            execute_at = now + item.delay_seconds
+            pipe.zadd(DELAYED_QUEUE, {f"{new_job.id}:{new_job.priority}": execute_at})
+        else:
+            pipe.zadd(READY_QUEUE, {str(new_job.id): -new_job.priority})
+
+        delay_info = f", delayed {item.delay_seconds}s" if item.delay_seconds > 0 else ""
+        record_job_event(
+            db,
+            new_job.id,
+            "JOB_CREATED",
+            f"Job {new_job.id} created (type: {new_job.type}, priority: {new_job.priority}{delay_info})",
+            commit=False
+        )
+
+    pipe.execute()
+    db.commit()
+
+    return [j[0] for j in created_items]
 
 
 @app.get("/jobs", response_model=list[JobDetailResponse])
