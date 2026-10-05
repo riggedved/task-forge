@@ -37,8 +37,14 @@ from sqlalchemy.pool import NullPool
 # Engine configuration with resilient connection pooling for Supabase
 # - pool_pre_ping: tests liveness of connection before checkout, preventing stale drops
 # - pool_recycle: proactively recycles connections before cloud timeout (e.g. Supavisor)
-# - Explicit small pool_size & max_overflow to prevent multi-process connection exhaustion (e.g. Supabase 15 limit)
-use_null_pool = os.getenv("DB_USE_NULL_POOL", "").lower() in ("true", "1", "yes")
+# Use NullPool for Supabase pooler (port 6543 or pooler.supabase.com):
+# Supavisor handles pooling on the server side, so disabling client-side QueuePool
+# prevents pool exhaustion and 30s timeouts during concurrent dashboard requests.
+use_null_pool = (
+    os.getenv("DB_USE_NULL_POOL", "").lower() in ("true", "1", "yes")
+    or ":6543" in DATABASE_URL
+    or "pooler.supabase.com" in DATABASE_URL
+)
 
 engine_kwargs = {
     "connect_args": connect_args,
@@ -48,8 +54,9 @@ engine_kwargs = {
 if use_null_pool:
     engine_kwargs["poolclass"] = NullPool
 else:
-    engine_kwargs["pool_size"] = int(os.getenv("DB_POOL_SIZE", "3"))
-    engine_kwargs["max_overflow"] = int(os.getenv("DB_MAX_OVERFLOW", "2"))
+    engine_kwargs["pool_size"] = int(os.getenv("DB_POOL_SIZE", "10"))
+    engine_kwargs["max_overflow"] = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+    engine_kwargs["pool_timeout"] = int(os.getenv("DB_POOL_TIMEOUT", "30"))
     engine_kwargs["pool_recycle"] = int(os.getenv("DB_POOL_RECYCLE", "300"))
 
 engine = create_engine(
