@@ -32,6 +32,14 @@ if ssl_mode:
 elif ("supabase.co" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL) and "sslmode" not in DATABASE_URL:
     connect_args["sslmode"] = "require"
 
+# Disable prepared statement caching for psycopg (v3) in transaction mode poolers
+if ":6543" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL:
+    try:
+        import psycopg
+        connect_args["prepare_threshold"] = None
+    except ImportError:
+        pass
+
 from sqlalchemy.pool import NullPool
 
 # Engine configuration with resilient connection pooling for Supabase

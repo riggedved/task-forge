@@ -65,8 +65,10 @@ def update_worker_heartbeat():
         if worker and worker.status != "STOPPED":
             worker.last_heartbeat = time.time()
             db.commit()
+        else:
+            db.rollback()
     except Exception:
-        pass
+        db.rollback()
     finally:
         db.close()
 
@@ -266,7 +268,9 @@ def heartbeat_loop(job_id, stop_event):
 
         try:
             heartbeat(job_id, db)
-
+            db.commit()
+        except Exception:
+            db.rollback()
         finally:
             db.close()
 
