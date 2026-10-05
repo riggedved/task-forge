@@ -32,14 +32,29 @@ if ssl_mode:
 elif ("supabase.co" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL) and "sslmode" not in DATABASE_URL:
     connect_args["sslmode"] = "require"
 
+from sqlalchemy.pool import NullPool
+
 # Engine configuration with resilient connection pooling for Supabase
 # - pool_pre_ping: tests liveness of connection before checkout, preventing stale drops
 # - pool_recycle: proactively recycles connections before cloud timeout (e.g. Supavisor)
+# - Explicit small pool_size & max_overflow to prevent multi-process connection exhaustion (e.g. Supabase 15 limit)
+use_null_pool = os.getenv("DB_USE_NULL_POOL", "").lower() in ("true", "1", "yes")
+
+engine_kwargs = {
+    "connect_args": connect_args,
+    "pool_pre_ping": True,
+}
+
+if use_null_pool:
+    engine_kwargs["poolclass"] = NullPool
+else:
+    engine_kwargs["pool_size"] = int(os.getenv("DB_POOL_SIZE", "3"))
+    engine_kwargs["max_overflow"] = int(os.getenv("DB_MAX_OVERFLOW", "2"))
+    engine_kwargs["pool_recycle"] = int(os.getenv("DB_POOL_RECYCLE", "300"))
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    pool_recycle=300
+    **engine_kwargs
 )
 
 SessionLocal = sessionmaker(
