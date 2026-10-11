@@ -1,22 +1,35 @@
 # Task Forge ⚡ Distributed Job Queue & Developer Playground
 
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?logo=tailwindcss)](https://tailwindcss.com/)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis)](https://redis.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
-[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?logo=sqlalchemy)](https://www.sqlalchemy.org/)
-[![Uvicorn](https://img.shields.io/badge/Uvicorn-ASGI-2C5BB4)](https://www.uvicorn.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Architecture](https://img.shields.io/badge/Architecture-Distributed%20Systems-blueviolet)]()
-[![Guarantees](https://img.shields.io/badge/Guarantees-At--Least--Once-success)]()
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?style=flat-square)](https://www.sqlalchemy.org/)
+[![Uvicorn](https://img.shields.io/badge/Uvicorn-ASGI-2C5BB4?style=flat-square)](https://www.uvicorn.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Guarantees](https://img.shields.io/badge/Guarantees-At--Least--Once-10B981?style=flat-square)](#-system-overview--guarantees)
 
-A production-grade, fault-tolerant distributed task queue engine and real-time observability playground built in Python with **FastAPI**, **Redis**, **PostgreSQL**, and a modern **Next.js (App Router) + TypeScript** frontend.
+A production-grade, fault-tolerant distributed task queue engine and real-time observability playground built with **FastAPI**, **Redis**, **Dockerized PostgreSQL**, and a modern **Next.js (App Router) + TypeScript** frontend.
 
-Built from first principles around core distributed systems primitives, Task Forge provides **at-least-once delivery guarantees**, **atomic zero-lock claiming via Redis Lua scripts**, **priority-driven inverted scheduling**, **worker crash recovery via time-bounded leases and asynchronous heartbeats**, **strict idempotency deduplication**, **exponential backoff retries with dead-letter queueing (DLQ)**, **real worker process management**, and a **developer playground UI**.
+Built from first principles around core distributed systems primitives, Task Forge provides **at-least-once delivery guarantees**, **atomic zero-lock claiming via Redis Lua scripts**, **priority-driven inverted scheduling**, **worker crash recovery via time-bounded leases and asynchronous heartbeats**, **strict idempotency deduplication**, **exponential backoff retries with dead-letter queueing (DLQ)**, **live worker subprocess management**, and a **developer playground UI with live auto-follow telemetry**.
+
+---
+
+### 🛠️ Technology Stack
+
+| Layer | Technologies & Frameworks | Role & Responsibilities |
+| :--- | :--- | :--- |
+| **API & Coordination** | **Python 3.12**, **FastAPI**, **Uvicorn** | High-performance asynchronous REST gateway, worker supervisor, background reaper daemon. |
+| **Broker & State** | **Redis 7 (Alpine)**, **Lua Scripting** | Sub-millisecond queue storage, atomic zero-lock claiming (`ZPOPMIN` + `ZADD`), delayed sweeps, distributed leases. |
+| **Relational Storage** | **PostgreSQL 16 (Dockerized)**, **SQLAlchemy 2.0**, **Psycopg 3** | Durable persistence, idempotent deduplication (`UNIQUE` constraints), audit event history, client-side connection pooling. |
+| **Observability Frontend** | **Next.js 16 (App Router)**, **React 19**, **TypeScript** | Real-time cluster dashboard, live auto-follow job streaming, queue visualizer, fleet controls. |
+| **Styling & UI** | **TailwindCSS v4**, **Google Material Symbols** | Sleek dark-mode Stitch design system, dynamic telemetry meters, micro-animations. |
+| **Containerization** | **Docker**, **Docker Compose** | Multi-container orchestration (`api`, `redis`, `postgres`) with health checks, persistent volumes, and automatic networking. |
 
 ---
 
@@ -95,8 +108,9 @@ Built from first principles around core distributed systems primitives, Task For
   - **System Summary Bar**: Real-time counters (Total, Pending, Processing, Completed, Failed, DLQ), throughput ($j/m$), average latency, and Redis memory usage.
   - **Vertical Create Job Panel**: Preset buttons and inline custom numeric inputs for Priority, Duration, and Delay, plus a JSON payload editor and idempotency key generator.
   - **Worker Fleet Dashboard**: Live worker cards, statuses (`IDLE`, `PROCESSING`, `STOPPED`, `OFFLINE`), current job links, uptime, and stop controls.
-  - **Live Job Inspector & Queue Depth**: Status badges, payload viewer, lease deadline countdown, retry counter, cancel, re-queue, and clone actions.
+  - **Smart Live Job Panel (Auto-Follow & Pinned)**: Live telemetry streaming, automatic camera focus on currently processing jobs, 2-second completion dwell time, concurrent in-flight pill switcher, and non-interruptive pinned manual inspection.
   - **Real-Time Activity Feed**: Live streaming audit logs of all job and worker events.
+  - **Queue State Visualizer**: Progress bars tracking ready, processing, delayed, and dead-letter queue volumes.
 
 ---
 
@@ -190,29 +204,33 @@ Built from first principles around core distributed systems primitives, Task For
 task-forge/
 ├── app/
 │   ├── __init__.py         # Package initialization
-│   ├── database.py         # SQLAlchemy engine, session maker, and declarative Base
+│   ├── database.py         # SQLAlchemy engine, session maker, resilient connection pooling
 │   ├── models.py           # SQLAlchemy Job, JobEvent, Worker, WorkerEvent models
 │   ├── redis_client.py     # Centralized Redis client connection instance
 │   ├── main.py             # FastAPI app, worker management, background reaper, telemetry
 │   ├── worker.py           # Distributed worker daemon (atomic Lua, heartbeats, retries)
 │   ├── reaper.py           # Standalone crash recovery daemon (sweeps expired leases)
 │   ├── events.py           # Audit logging helpers for job and worker events
-│   └── schemas.py          # Pydantic v2 schemas for all requests, responses, telemetry
+│   └── schemas.py          # Pydantic v2 schemas for requests, responses, telemetry
 ├── frontend/               # Next.js 16 + React 19 + TypeScript + TailwindCSS Playground
 │   ├── app/                # App Router (page.tsx, layout.tsx, globals.css)
-│   ├── components/         # UI Components:
+│   ├── components/         # Modular UI Components:
 │   │   ├── Header.tsx           # Cluster health & top-right Hard Reset button
 │   │   ├── SystemSummaryBar.tsx # Top counters, throughput, latency, simulate load
 │   │   ├── CreateJobPanel.tsx   # Vertical layout with Priority/Duration/Delay selectors
-│   │   ├── WorkersSection.tsx   # Worker cards, spawn worker, stop worker (immediate)
-│   │   ├── LiveJobDetail.tsx    # Detailed inspection, countdown timer, cancel, re-queue
+│   │   ├── WorkersSection.tsx   # Live worker fleet, spawn worker, immediate termination
+│   │   ├── LiveJobPanel.tsx     # Auto-Follow streaming, in-flight pills, pinned inspection
+│   │   ├── QueueStateSection.tsx# Visual depth meters & queue breakdown cards
 │   │   ├── RecentJobsTable.tsx  # Interactive jobs table with status filters
-│   │   ├── RecentActivityFeed.tsx # Audit log stream with event filtering
-│   │   ├── HardResetModal.tsx   # Destructive confirmation modal with progress states
-│   │   └── Sidebar.tsx          # Navigation sidebar with quick queue depths
+│   │   ├── RecentActivityFeed.tsx # Real-time cluster audit log stream
+│   │   ├── PayloadInspectModal.tsx# Formatted JSON payload modal inspector
+│   │   └── HardResetModal.tsx   # Destructive confirmation modal with progress states
 │   ├── lib/                # API client (api.ts) and utility helpers (utils.ts)
 │   └── types/              # TypeScript definitions for cluster telemetry & jobs
 ├── worker_logs/            # Per-worker process stdout/stderr log output
+├── Dockerfile              # Container definition for FastAPI backend & workers
+├── docker-compose.yml      # Orchestration for FastAPI API, Redis 7, & PostgreSQL 16
+├── .dockerignore           # Exclusions for container build context
 ├── test_api_and_system.py  # System integration test suite
 ├── test_worker_lifecycle.py # Worker lifecycle and crash recovery test suite
 ├── test_create_job_controls.py # Create Job panel parameters test suite
@@ -225,19 +243,61 @@ task-forge/
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-1. **Python 3.10+** (Python 3.12 recommended)
-2. **Node.js 18+** (for frontend playground)
-3. **Supabase PostgreSQL** project (or local PostgreSQL)
-4. **Redis** running on port `6379` (or cloud Redis)
+- **Docker & Docker Compose** (Recommended for full-stack orchestration)
+- **Node.js 18+** & `npm` (for the Next.js playground frontend)
+- *(Optional for bare-metal Python dev)*: **Python 3.10+**, local Redis, local PostgreSQL
 
 ---
 
-### Backend Setup
+### Option A: Complete Stack with Docker Compose (Recommended)
+
+Run the containerized PostgreSQL 16, Redis 7, and FastAPI backend with a single command:
 
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/riggedved/task-forge.git
    cd task-forge
+   ```
+
+2. **Configure Environment Variables (`.env`)**:
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Pre-configured with local containerized PostgreSQL and Redis defaults).*
+
+3. **Start the Stack (PostgreSQL 16 + Redis 7 + FastAPI)**:
+   ```bash
+   docker compose up -d --build
+   ```
+   - **PostgreSQL 16**: Port `5432` with health checks and persistent storage (`postgres_data`).
+   - **Redis 7**: Port `6379` with in-memory Sorted Set brokers.
+   - **FastAPI Backend**: Port `8000` with automatic table creation on startup.
+
+4. **Verify Health**:
+   ```bash
+   curl http://localhost:8000/health
+   # Expected: {"status":"healthy","database":"connected","redis":"connected"}
+   ```
+   - Interactive Swagger API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+5. **Start the Next.js Frontend Playground**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+### Option B: Local Python Development Setup (Bare-Metal)
+
+If you prefer executing Python directly in a local virtual environment:
+
+1. **Start the dependencies via Docker**:
+   ```bash
+   docker compose up -d postgres redis
    ```
 
 2. **Create and activate a virtual environment**:
@@ -256,13 +316,14 @@ task-forge/
    pip install -r requirements.txt
    ```
 
-4. **Configure Environment Variables (`.env`)**:
-   Copy `.env.example` to `.env` (or update `.env`) and add your Supabase connection string:
+4. **Configure `.env` for host execution**:
    ```env
-   # .env
-   DATABASE_URL=postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
-   SUPABASE_URL=https://[PROJECT_REF].supabase.co
-   SUPABASE_ANON_KEY=your-anon-key
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   POSTGRES_DB=job_queue
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/job_queue
+   DB_SSL_MODE=disable
+
    REDIS_HOST=localhost
    REDIS_PORT=6379
    ```
@@ -271,35 +332,14 @@ task-forge/
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
-   - API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - Health Check: [http://localhost:8000/health](http://localhost:8000/health)
 
----
-
-### Frontend Setup
-
-Open a second terminal window:
-
-1. **Navigate to the frontend directory**:
+6. **Start the Frontend**:
    ```bash
    cd frontend
-   ```
-
-2. **Install frontend dependencies**:
-   ```bash
    npm install
-   ```
-
-3. **Start the Next.js Dev Server**:
-   ```bash
    npm run dev
    ```
-
-4. **Access the Playground UI**:
-   Open your browser to:
-   ```text
-   http://localhost:3000
-   ```
+   Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
@@ -358,15 +398,18 @@ Located in the **Workers** section:
   - Start a new worker or leave another worker running to watch it pick up and complete the orphaned task!
 - **Show Stopped Workers**: Toggle switch to inspect historical or terminated workers.
 
-### 5. Live Job Inspector & Queue Depth
-- **Interactive Table**: Filter jobs by status (`ALL`, `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `DLQ`) or search by Job ID.
-- **Job Detail Pane**: Click any job row to view:
-  - Full formatted JSON payload.
-  - Lifecycle timeline (`Created At`, `Started At`, `Completed At`, `Execution Latency`).
-  - Worker assignment UUID.
-  - Live lease expiration countdown for in-flight tasks.
-  - Actions: **Cancel Job**, **Re-queue to Ready Queue**, or **Clone Settings** into the Create Job panel.
-- **Visual Queue Depth**: Progress bars tracking ready, processing, delayed, and dead-letter queue volumes.
+### 5. Smart Live Job Panel & Queue State Visualizer
+- **Smart Live Auto-Follow Mode (Default)**:
+  - Streams real-time task progress, live stdout logs, and lease timers as workers process jobs.
+  - **Completion Dwell Grace Period (2s)**: Holds on completed jobs for 2 seconds so operators see the green 100% completion badge and final logs before smoothly transitioning.
+  - **Auto-Advance**: Automatically spotlights the next active `PROCESSING` job (or next `PENDING` job).
+  - **Concurrent In-Flight Switcher**: When multiple workers run concurrently, an `In-Flight (N)` bar renders clickable pills for every parallel job with pulsing activity dots.
+- **Pinned Mode (Manual Inspection)**:
+  - Clicking any job in the Recent Jobs table, Queue State cards, or Activity feed automatically pins the view (`📌 Pinned`).
+  - Active background jobs will **not** interrupt your payload inspection or log debugging.
+  - Click **Resume Live Auto-Follow ⚡** or the header toggle button at any time to re-engage automated tracking.
+- **Queue State Section**: Four dedicated cards with animated depth meters for Ready (`job_queue`), Processing (`processing_queue`), Delayed (`delayed_queue`), and Dead-Letter (`failed_queue`).
+- **Interactive Jobs Table**: Filter jobs by status (`ALL`, `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), search by Job ID, inspect formatted payloads, or requeue failed jobs.
 
 ### 6. Real-Time Activity Feed
 - Streams all cluster events in reverse chronological order:
@@ -465,14 +508,17 @@ cd frontend && npx tsc --noEmit
 
 | Parameter | Location | Default Value | Description |
 | :--- | :--- | :---: | :--- |
-| `DATABASE_URL` | `.env` / `app/database.py` | `postgresql://...` | Connection URI for Supabase PostgreSQL (direct or pooler). |
-| `SUPABASE_URL` | `.env` / `app/supabase_client.py` | `https://[ID].supabase.co` | Supabase project API endpoint URL. |
-| `SUPABASE_ANON_KEY` | `.env` / `app/supabase_client.py` | `eyJ...` | Supabase anonymous / public API key. |
-| `SUPABASE_SERVICE_ROLE_KEY` | `.env` / `app/supabase_client.py` | `eyJ...` | Supabase service-role secret key (elevated permissions). |
-| `DB_SSL_MODE` | `.env` / `app/database.py` | `require` | SSL mode for PostgreSQL database connection. |
-| `REDIS_HOST` | `.env` / `app/redis_client.py` | `localhost` | Hostname for the Redis server. |
+| `POSTGRES_USER` | `.env` / `docker-compose.yml` | `postgres` | Superuser username for local PostgreSQL database. |
+| `POSTGRES_PASSWORD` | `.env` / `docker-compose.yml` | `postgres` | Superuser password for local PostgreSQL database. |
+| `POSTGRES_DB` | `.env` / `docker-compose.yml` | `job_queue` | Target relational database name. |
+| `DATABASE_URL` | `.env` / `app/database.py` | `postgresql://...` | Connection URI (`@postgres:5432` in Docker, `@localhost:5432` on host). |
+| `DB_SSL_MODE` | `.env` / `app/database.py` | `disable` | SSL connection mode (`disable` for local Docker, `require` for cloud). |
+| `DB_POOL_SIZE` | `app/database.py` | `10` | SQLAlchemy client-side connection pool size for QueuePool. |
+| `DB_MAX_OVERFLOW` | `app/database.py` | `20` | Maximum temporary connections above pool size under peak load. |
+| `REDIS_HOST` | `.env` / `app/redis_client.py` | `localhost` | Hostname for Redis (`redis` in Docker, `localhost` on host). |
 | `REDIS_PORT` | `.env` / `app/redis_client.py` | `6379` | Port for the Redis server. |
-| `REDIS_URL` | `.env` / `app/redis_client.py` | None | Full connection URI for Redis (e.g. Upstash). |
+| `REDIS_PASSWORD` | `.env` / `app/redis_client.py` | None | Optional authentication password for Redis instance. |
+| `REDIS_URL` | `.env` / `app/redis_client.py` | None | Optional full connection URI for Redis (e.g. Upstash). |
 | `LEASE_DURATION` | `app/worker.py` | `60` | Lease duration in seconds before an in-flight task is considered orphaned. |
 | `HEARTBEAT_INTERVAL` | `app/worker.py` | `20` | Interval in seconds between heartbeat lease renewals by an active worker. |
 | `WORKER_HEARTBEAT_TIMEOUT` | `app/main.py` | `30.0` | Timeout in seconds after which a silent worker is flagged `OFFLINE`. |
