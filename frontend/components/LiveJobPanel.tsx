@@ -10,6 +10,10 @@ interface LiveJobPanelProps {
   onJobUpdated: (updatedJob: Job) => void;
   onInspectPayload: (job: Job) => void;
   onCloneJob: (job: Job) => void;
+  autoFollow?: boolean;
+  onToggleAutoFollow?: () => void;
+  activeJobs?: Job[];
+  onSelectJob?: (job: Job) => void;
 }
 
 export const LiveJobPanel: React.FC<LiveJobPanelProps> = ({
@@ -17,6 +21,10 @@ export const LiveJobPanel: React.FC<LiveJobPanelProps> = ({
   onJobUpdated,
   onInspectPayload,
   onCloneJob,
+  autoFollow = true,
+  onToggleAutoFollow,
+  activeJobs = [],
+  onSelectJob,
 }) => {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -179,7 +187,7 @@ export const LiveJobPanel: React.FC<LiveJobPanelProps> = ({
 
       {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-space-sm">
-        <div className="flex items-center gap-space-sm">
+        <div className="flex items-center gap-space-sm flex-wrap">
           <span className="px-space-xs py-0.5 rounded bg-surface-container text-tertiary font-mono-sm text-mono-sm uppercase font-semibold">
             Live Job
           </span>
@@ -191,33 +199,108 @@ export const LiveJobPanel: React.FC<LiveJobPanelProps> = ({
           </span>
         </div>
 
-        {/* Status Badge */}
-        <div
-          className={`flex items-center gap-space-xs px-space-sm py-1 rounded font-mono-sm text-mono-sm uppercase font-semibold tracking-wider ${
-            job.status === 'PROCESSING'
-              ? 'bg-tertiary/10 text-tertiary shadow-[0_0_12px_rgba(76,215,246,0.2)]'
-              : job.status === 'COMPLETED'
-              ? 'bg-primary/10 text-primary'
-              : job.status === 'FAILED'
-              ? 'bg-error-container text-error'
-              : job.status === 'CANCELLED'
-              ? 'bg-surface-container text-on-surface-variant'
-              : 'bg-secondary/10 text-secondary'
-          }`}
-        >
-          {job.status === 'PROCESSING' && (
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
-            </span>
+        <div className="flex items-center gap-space-xs">
+          {/* Auto-Follow / Pinned Mode Button */}
+          {onToggleAutoFollow && (
+            <button
+              type="button"
+              onClick={onToggleAutoFollow}
+              title={
+                autoFollow
+                  ? 'Auto-Follow is active: Automatically streaming live active jobs. Click to pin this job.'
+                  : 'Pinned: View will not automatically switch. Click to resume live auto-follow.'
+              }
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded font-mono-sm text-mono-sm transition-all cursor-pointer border ${
+                autoFollow
+                  ? 'bg-tertiary/10 text-tertiary border-tertiary/30 hover:bg-tertiary/20 shadow-[0_0_10px_rgba(76,215,246,0.15)]'
+                  : 'bg-amber-500/10 text-amber-300 border-amber-500/40 hover:bg-amber-500/20'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {autoFollow ? 'bolt' : 'push_pin'}
+              </span>
+              <span>{autoFollow ? 'Auto-Follow' : 'Pinned'}</span>
+            </button>
           )}
-          {job.status === 'PENDING' && <span className="w-2 h-2 rounded-full bg-secondary"></span>}
-          {job.status === 'COMPLETED' && <span className="w-2 h-2 rounded-full bg-primary"></span>}
-          {job.status === 'FAILED' && <span className="w-2 h-2 rounded-full bg-error"></span>}
-          {job.status === 'CANCELLED' && <span className="w-2 h-2 rounded-full bg-outline"></span>}
-          <span>{job.status}</span>
+
+          {/* Status Badge */}
+          <div
+            className={`flex items-center gap-space-xs px-space-sm py-1 rounded font-mono-sm text-mono-sm uppercase font-semibold tracking-wider ${
+              job.status === 'PROCESSING'
+                ? 'bg-tertiary/10 text-tertiary shadow-[0_0_12px_rgba(76,215,246,0.2)]'
+                : job.status === 'COMPLETED'
+                ? 'bg-primary/10 text-primary'
+                : job.status === 'FAILED'
+                ? 'bg-error-container text-error'
+                : job.status === 'CANCELLED'
+                ? 'bg-surface-container text-on-surface-variant'
+                : 'bg-secondary/10 text-secondary'
+            }`}
+          >
+            {job.status === 'PROCESSING' && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+              </span>
+            )}
+            {job.status === 'PENDING' && <span className="w-2 h-2 rounded-full bg-secondary"></span>}
+            {job.status === 'COMPLETED' && <span className="w-2 h-2 rounded-full bg-primary"></span>}
+            {job.status === 'FAILED' && <span className="w-2 h-2 rounded-full bg-error"></span>}
+            {job.status === 'CANCELLED' && <span className="w-2 h-2 rounded-full bg-outline"></span>}
+            <span>{job.status}</span>
+          </div>
         </div>
       </div>
+
+      {/* Pinned Info Banner */}
+      {!autoFollow && onToggleAutoFollow && (
+        <div className="flex items-center justify-between px-space-sm py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-body-xs font-mono-xs animate-in fade-in">
+          <div className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[16px] text-amber-400">push_pin</span>
+            <span>Viewing pinned Job #{job.id}. Background jobs won't interrupt your inspection.</span>
+          </div>
+          <button
+            type="button"
+            onClick={onToggleAutoFollow}
+            className="underline hover:text-amber-100 cursor-pointer font-medium shrink-0 ml-2"
+          >
+            Resume Live Auto-Follow ⚡
+          </button>
+        </div>
+      )}
+
+      {/* In-Flight Switcher Strip (if multiple jobs are processing) */}
+      {activeJobs && activeJobs.length > 1 && (
+        <div className="flex items-center gap-space-xs overflow-x-auto py-1 px-space-xs bg-surface-container/60 rounded-lg border border-surface-container-high/40">
+          <span className="text-on-surface-variant font-mono-xs text-mono-xs uppercase tracking-wider flex items-center gap-1 shrink-0">
+            <span className="material-symbols-outlined text-[14px] text-tertiary animate-spin">sync</span>
+            In-Flight ({activeJobs.length}):
+          </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {activeJobs.map((act) => {
+              const isCurrent = act.id === job.id;
+              return (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => onSelectJob?.(act)}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-mono-xs font-mono-xs transition-all cursor-pointer shrink-0 ${
+                    isCurrent
+                      ? 'bg-tertiary/20 text-tertiary border border-tertiary/50 font-semibold shadow-sm'
+                      : 'bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-transparent'
+                  }`}
+                >
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-tertiary"></span>
+                  </span>
+                  <span>#{act.id} {act.type}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {actionError && (
         <div className="p-space-sm rounded bg-error-container text-on-error-container text-body-sm flex items-center justify-between">

@@ -16,29 +16,23 @@ else:
 DATABASE_URL = (
     os.getenv("DATABASE_URL")
     or os.getenv("SUPABASE_DB_URL")
-    or "postgresql://postgres:your_new_password@localhost:5432/job_queue"
+    or "postgresql://postgres:postgres@localhost:5432/job_queue"
 )
 
 # Normalize postgres:// scheme to postgresql:// for SQLAlchemy compatibility
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Configure connection parameters for cloud PostgreSQL (Supabase)
+# Configure connection parameters (SSL enabled for cloud providers like Supabase, disabled for local)
 connect_args = {}
 
 ssl_mode = os.getenv("DB_SSL_MODE")
-if ssl_mode:
+if ssl_mode and ssl_mode.lower() in ("require", "verify-ca", "verify-full", "prefer", "allow"):
     connect_args["sslmode"] = ssl_mode
+elif ssl_mode and ssl_mode.lower() in ("disable", "none", "off"):
+    connect_args["sslmode"] = "disable"
 elif ("supabase.co" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL) and "sslmode" not in DATABASE_URL:
     connect_args["sslmode"] = "require"
-
-# Disable prepared statement caching for psycopg (v3) in transaction mode poolers
-if ":6543" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL:
-    try:
-        import psycopg
-        connect_args["prepare_threshold"] = None
-    except ImportError:
-        pass
 
 from sqlalchemy.pool import NullPool
 

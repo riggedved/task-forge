@@ -38,6 +38,7 @@ export default function PlaygroundPage() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [autoFollow, setAutoFollow] = useState<boolean>(true);
   const [inspectingJob, setInspectingJob] = useState<Job | null>(null);
   const [cloneJobData, setCloneJobData] = useState<Job | null>(null);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -47,6 +48,11 @@ export default function PlaygroundPage() {
 
   const selectedJobIdRef = useRef<number | null>(null);
   selectedJobIdRef.current = selectedJob ? selectedJob.id : null;
+
+  const autoFollowRef = useRef<boolean>(true);
+  autoFollowRef.current = autoFollow;
+
+  const completedDwellRef = useRef<{ id: number; timestamp: number } | null>(null);
 
   // Primary data polling cycle
   const fetchTelemetry = useCallback(async () => {
@@ -87,15 +93,61 @@ export default function PlaygroundPage() {
       if (Array.isArray(jobsRes)) {
         setJobs(jobsRes);
 
-        // Keep selectedJob synchronized with fresh backend data
-        if (selectedJobIdRef.current !== null) {
-          const matching = jobsRes.find((j) => j.id === selectedJobIdRef.current);
-          if (matching) {
-            setSelectedJob(matching);
+        const processingJobs = jobsRes.filter((j) => j.status === 'PROCESSING');
+        // Sort processing jobs by started_at descending (newest first), then priority descending
+        processingJobs.sort((a, b) => (b.started_at || 0) - (a.started_at || 0) || b.priority - a.priority);
+
+        if (autoFollowRef.current) {
+          const currentSelected = selectedJobIdRef.current !== null
+            ? jobsRes.find((j) => j.id === selectedJobIdRef.current)
+            : null;
+
+          if (currentSelected && (currentSelected.status === 'PROCESSING' || currentSelected.status === 'PENDING')) {
+            // Currently watched job is still actively processing or pending — keep following it
+            setSelectedJob(currentSelected);
+            completedDwellRef.current = null;
+          } else if (currentSelected) {
+            // Currently watched job just finished (COMPLETED, FAILED, CANCELLED)
+            setSelectedJob(currentSelected);
+
+            if (!completedDwellRef.current || completedDwellRef.current.id !== currentSelected.id) {
+              completedDwellRef.current = { id: currentSelected.id, timestamp: Date.now() };
+            }
+
+            // Dwell for 2000ms so user can view the completion state before transitioning
+            const elapsedDwell = Date.now() - completedDwellRef.current.timestamp;
+            if (elapsedDwell >= 2000) {
+              // Find other active processing jobs
+              const nextProcessing = processingJobs.find((j) => j.id !== currentSelected.id);
+              if (nextProcessing) {
+                setSelectedJob(nextProcessing);
+                completedDwellRef.current = null;
+              } else {
+                // If none processing, find next pending job
+                const pendingJobs = jobsRes.filter((j) => j.status === 'PENDING');
+                if (pendingJobs.length > 0) {
+                  pendingJobs.sort((a, b) => b.priority - a.priority || (a.created_at || 0) - (b.created_at || 0));
+                  setSelectedJob(pendingJobs[0]);
+                  completedDwellRef.current = null;
+                }
+              }
+            }
+          } else {
+            // No job selected yet: pick freshest processing job, or top pending, or first job
+            if (processingJobs.length > 0) {
+              setSelectedJob(processingJobs[0]);
+            } else if (jobsRes.length > 0) {
+              setSelectedJob(jobsRes[0]);
+            }
           }
-        } else if (jobsRes.length > 0 && !selectedJob) {
-          // Default select the latest job
-          setSelectedJob(jobsRes[0]);
+        } else {
+          // Pinned mode: keep existing selected job synchronized with fresh data, don't auto-switch
+          if (selectedJobIdRef.current !== null) {
+            const matching = jobsRes.find((j) => j.id === selectedJobIdRef.current);
+            if (matching) {
+              setSelectedJob(matching);
+            }
+          }
         }
       }
 
@@ -103,7 +155,7 @@ export default function PlaygroundPage() {
     } catch (err: any) {
       setBackendError(err.message || 'Unable to connect to backend server');
     }
-  }, [selectedJob]);
+  }, []);
 
   // Initial load & Polling Interval (1.5 seconds)
   useEffect(() => {
@@ -112,10 +164,12 @@ export default function PlaygroundPage() {
     return () => clearInterval(interval);
   }, [fetchTelemetry]);
 
-  // Handle new job created from form
+  // Handle new job created from form (automatically follows newly spawned job)
   const handleJobCreated = (newJob: Job) => {
     setJobs((prev) => [newJob, ...prev.filter((j) => j.id !== newJob.id)]);
     setSelectedJob(newJob);
+    setAutoFollow(true);
+    completedDwellRef.current = null;
     fetchTelemetry();
   };
 
@@ -128,8 +182,19 @@ export default function PlaygroundPage() {
     fetchTelemetry();
   };
 
-  // Select job by ID (e.g. from activity or worker cards)
+  // Handle manual selection from list/queue/cards (pins the view so background updates don't switch it)
+  const handleManualSelectJob = (job: Job) => {
+    setSelectedJob(job);
+    setAutoFollow(false);
+    completedDwellRef.current = null;
+    const el = document.getElementById('live-job');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Select job by ID (e.g. from activity or worker cards) -> Pins the view
   const handleSelectJobId = (jobId: number) => {
+    setAutoFollow(false);
+    completedDwellRef.current = null;
     const found = jobs.find((j) => j.id === jobId);
     if (found) {
       setSelectedJob(found);
@@ -202,6 +267,8 @@ export default function PlaygroundPage() {
   const handleHardResetSuccess = async () => {
     setSelectedJob(null);
     selectedJobIdRef.current = null;
+    setAutoFollow(true);
+    completedDwellRef.current = null;
     setInspectingJob(null);
     setJobs([]);
     setActivity([]);
@@ -289,6 +356,13 @@ export default function PlaygroundPage() {
                   onJobUpdated={handleJobUpdated}
                   onInspectPayload={(j) => setInspectingJob(j)}
                   onCloneJob={handleCloneJob}
+                  autoFollow={autoFollow}
+                  onToggleAutoFollow={() => setAutoFollow((prev) => !prev)}
+                  activeJobs={jobs.filter((j) => j.status === 'PROCESSING')}
+                  onSelectJob={(j) => {
+                    setSelectedJob(j);
+                    selectedJobIdRef.current = j.id;
+                  }}
                 />
               </div>
             </section>
@@ -297,7 +371,7 @@ export default function PlaygroundPage() {
             <QueueStateSection
               queueDepth={queueDepth}
               jobs={jobs}
-              onSelectJob={(j) => setSelectedJob(j)}
+              onSelectJob={handleManualSelectJob}
               onJobRequeued={handleJobUpdated}
             />
 
@@ -319,7 +393,7 @@ export default function PlaygroundPage() {
             <RecentJobsTable
               jobs={jobs}
               selectedJobId={selectedJob?.id}
-              onSelectJob={(j) => setSelectedJob(j)}
+              onSelectJob={handleManualSelectJob}
               onInspectPayload={(j) => setInspectingJob(j)}
               onJobUpdated={handleJobUpdated}
             />
